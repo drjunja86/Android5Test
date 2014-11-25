@@ -5,10 +5,10 @@
     tools:context="com.ap.androidltest.fragment.RecycleViewFragment">
 
     <android.support.v7.widget.RecyclerView
-        android:paddingTop="@dimen/tool_bar_height"
-        android:clipToPadding="false"
+        android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:id="@+id/recycler_view" />
+        android:clipToPadding="false"
+        android:paddingTop="@dimen/tool_bar_height" />
 
 </FrameLayout>

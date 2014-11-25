@@ -1,5 +1,6 @@
 package com.ap.androidltest.activity;
 
+import android.app.Fragment;
 import android.content.Intent;
 import android.content.res.Configuration;
 import android.os.Bundle;
@@ -17,20 +18,21 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.ap.androidltest.R;
+import com.ap.androidltest.fragment.GalleryFragment;
 import com.ap.androidltest.fragment.RecycleViewFragment;
 
 
 public class MainActivity extends ActionBarActivity implements AdapterView.OnItemClickListener {
 
     private static final String KEY_TOOLBAR_OFFSET_Y = "KEY_TOOLBAR_OFFSET_Y";
+    private static final boolean DRAWER_OVER_TOOL_BAR = true;
     private ActionBarDrawerToggle mToggle;
     private ListView mDrawerList;
     private Toolbar mToolbar;
     private int mToolbarHeight;
     private int mToolbarOffsetY = 0;
     private boolean mToolbarShown;
-
-    private static final boolean DRAWER_OVER_TOOL_BAR = true;
+    private DrawerLayout mDrawerLayout;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,26 +44,23 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         setSupportActionBar(mToolbar);
         mToolbarHeight = getResources().getDimensionPixelSize(R.dimen.tool_bar_height);
 
-        DrawerLayout drawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
+        mDrawerLayout = (DrawerLayout) findViewById(R.id.drawer_layout);
         mToggle = new ActionBarDrawerToggle(
                 this,
-                drawerLayout,
+                mDrawerLayout,
                 R.string.navigation_drawer_open,
                 R.string.navigation_drawer_close);
         mToggle.setDrawerIndicatorEnabled(true);
-        drawerLayout.setDrawerListener(mToggle);
+        mDrawerLayout.setDrawerListener(mToggle);
 
         mDrawerList = (ListView) findViewById(R.id.navigation_drawer);
-        mDrawerList.setAdapter(new ArrayAdapter<String>(
+        mDrawerList.setAdapter(new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
                 new String[]{"Screen 1", "Screen 2", "Screen 3"}));
 
         if (savedInstanceState == null) {
-//            setFragment(0);
-            getFragmentManager().beginTransaction()
-                    .replace(R.id.container, new RecycleViewFragment())
-                    .commit();
+            setFragment(1);
         }
         else mToolbarOffsetY = savedInstanceState.getInt(KEY_TOOLBAR_OFFSET_Y);
         onToolBarShowOrHide(true);
@@ -138,17 +137,17 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
 
     @Override
     public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-//        setFragment(position);
+        setFragment(position);
     }
 
-    /*private void setFragment(int position) {
+    private void setFragment(int position) {
         Fragment fragment;
         switch (position) {
             case 0:
                 fragment = new RecycleViewFragment();
                 break;
             case 1:
-                fragment = new DetailsFragment();
+                fragment = new GalleryFragment();
                 break;
             default:
                 fragment = new RecycleViewFragment();
@@ -160,5 +159,5 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 .commit();
 
         mDrawerLayout.closeDrawers();
-    }*/
+    }
 }

@@ -15,6 +15,7 @@ import com.ap.androidltest.R;
 
 public class SearchActivity extends ActionBarActivity {
 
+    @SuppressWarnings({"FieldCanBeLocal", "UnusedDeclaration"})
     private SearchView mSearchView;
 
     @Override

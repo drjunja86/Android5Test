@@ -27,7 +27,7 @@ public class DetailsFragment extends Fragment implements ObservableScrollView.Ca
 
     private ObservableScrollView mScrollView;
     private int mPhotoHeightPixels, mHeaderHeightPixels, mAddButtonHeightPixels;
-//    private LinearLayout mHeaderBox;
+    //    private LinearLayout mHeaderBox;
     private ImageView mAddButton;
     private float mMaxHeaderElevation;
     private float mFABElevation;

@@ -1,13 +1,12 @@
-<com.ap.androidltest.widget.ObservableScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<com.ap.androidltest.widget.ObservableScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/all_scroll_view"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.ap.androidltest.activity.DetailsActivity$PlaceholderFragment"
-    tools:ignore="RtlHardcoded,RtlSymmetry"
     android:background="@android:color/white"
-    android:scrollbarStyle="outsideOverlay">
+    android:scrollbarStyle="outsideOverlay"
+    tools:context="com.ap.androidltest.activity.DetailsActivity$PlaceholderFragment"
+    tools:ignore="RtlHardcoded,RtlSymmetry">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -17,16 +16,16 @@
             android:id="@+id/all_image_container"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:elevation="0dp"
-            android:background="@android:color/white">
+            android:background="@android:color/white"
+            android:elevation="0dp">
 
             <ImageView
                 android:id="@+id/all_image"
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/all_image_height"
                 android:contentDescription="@string/no_content_description"
-                android:transitionName="@string/transition_image"
-                android:scaleType="centerCrop"/>
+                android:scaleType="centerCrop"
+                android:transitionName="@string/transition_image" />
 
         </FrameLayout>
 
@@ -34,36 +33,36 @@
             android:id="@+id/all_details"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:elevation="2dp"
-            android:background="@android:color/white">
+            android:background="@android:color/white"
+            android:elevation="2dp">
 
             <TextView
                 android:id="@+id/all_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingTop="20dp"
-                android:textColor="@android:color/black"
                 android:paddingLeft="@dimen/activity_hotizontal_content_padding"
                 android:paddingRight="@dimen/activity_horizontal_margin"
-                android:text="@string/lorem_ip_sum"/>
+                android:paddingTop="20dp"
+                android:text="@string/lorem_ip_sum"
+                android:textColor="@android:color/black" />
 
         </FrameLayout>
 
         <android.support.v7.widget.Toolbar
             android:id="@+id/all_toolbar"
-            android:layout_height="@dimen/all_bar_height"
             android:layout_width="match_parent"
-            android:minHeight="?attr/actionBarSize"
-            android:background="?attr/colorPrimary" />
+            android:layout_height="@dimen/all_bar_height"
+            android:background="?attr/colorPrimary"
+            android:minHeight="?attr/actionBarSize" />
 
         <ImageView
             android:id="@+id/all_add_button"
             android:layout_width="@dimen/all_add_button_size"
             android:layout_height="@dimen/all_add_button_size"
             android:background="@drawable/add_fab_background"
-            android:src="@drawable/add_button_icon_unchecked"
+            android:contentDescription="@string/no_content_description"
             android:scaleType="center"
-            android:contentDescription="@string/no_content_description"/>
+            android:src="@drawable/add_button_icon_unchecked" />
 
     </FrameLayout>
 

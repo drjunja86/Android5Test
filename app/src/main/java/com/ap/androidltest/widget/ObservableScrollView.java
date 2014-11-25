@@ -10,7 +10,7 @@ import java.util.ArrayList;
  * A custom ScrollView that can accept a scroll listener.
  */
 public class ObservableScrollView extends ScrollView {
-    private ArrayList<Callbacks> mCallbacks = new ArrayList<Callbacks>();
+    private ArrayList<Callbacks> mCallbacks = new ArrayList<>();
 
     public ObservableScrollView(Context context, AttributeSet attrs) {
         super(context, attrs);

@@ -10,8 +10,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
-import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Display;
@@ -25,21 +23,22 @@ import android.widget.TextView;
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
 import com.ap.androidltest.activity.MainActivity;
-import com.ap.androidltest.widget.decoration.GridDividerDecoration;
+import com.ap.androidltest.widget.GalleryLayoutManager;
+import com.ap.androidltest.widget.decoration.InsetDecoration;
 import com.bumptech.glide.Glide;
 
 
 /**
- * A simple {@link Fragment} subclass.
+ * A simple {@link android.app.Fragment} subclass.
  */
-public class RecycleViewFragment extends Fragment {
+public class GalleryFragment extends Fragment {
 
-    private static final String TAG = RecycleViewFragment.class.getSimpleName();
+    private static final String TAG = GalleryFragment.class.getSimpleName();
     private RecyclerView mRecyclerView;
     private ImageView mPressedImageView;
     private int mTotalScrollY = 0;
 
-    public RecycleViewFragment() {
+    public GalleryFragment() {
         // Required empty public constructor
     }
 
@@ -57,20 +56,11 @@ public class RecycleViewFragment extends Fragment {
 
         mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
 
-        // use this setting to improve performance if you know that changes
-        // in content do not change the layout size of the RecyclerView
-        mRecyclerView.setHasFixedSize(true);
-
         // use a linear layout manager
-        RecyclerView.LayoutManager layoutManager;
-        if (isLandscape())
-            layoutManager = new GridLayoutManager(getActivity(), 1, GridLayoutManager.HORIZONTAL, false);
-        else layoutManager = new LinearLayoutManager(getActivity());
-        GridDividerDecoration dd = new GridDividerDecoration(getActivity(), 50);
-        mRecyclerView.addItemDecoration(dd);
-//        layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.HORIZONTAL);
-//        layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);
+        RecyclerView.LayoutManager layoutManager = new GalleryLayoutManager();
         mRecyclerView.setLayoutManager(layoutManager);
+        InsetDecoration dd = new InsetDecoration(50);
+        mRecyclerView.addItemDecoration(dd);
 
         // specify an adapter (see also next example)
         MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2", "String 3", "String 4",
@@ -184,7 +174,7 @@ public class RecycleViewFragment extends Fragment {
             holder.titleText.setText(mDataset[position]);
             holder.button1.setText("Button 1");
             holder.button2.setText("Button 2");
-            Glide.with(RecycleViewFragment.this)
+            Glide.with(GalleryFragment.this)
                     .load(images[position % 5])
                     .fitCenter()
                     .into(holder.image);
