@@ -4,7 +4,6 @@ package com.ap.androidltest.fragment;
 import android.app.Fragment;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
-import android.graphics.Rect;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -12,7 +11,6 @@ import android.support.v7.graphics.Palette;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -22,7 +20,6 @@ import android.widget.TextView;
 
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
-import com.ap.androidltest.activity.MainActivity;
 import com.ap.androidltest.widget.GalleryLayoutManager;
 import com.ap.androidltest.widget.decoration.InsetDecoration;
 import com.bumptech.glide.Glide;
@@ -34,9 +31,9 @@ import com.bumptech.glide.Glide;
 public class GalleryFragment extends Fragment {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
+    GalleryLayoutManager mLayoutManager;
     private RecyclerView mRecyclerView;
     private ImageView mPressedImageView;
-    private int mTotalScrollY = 0;
 
     public GalleryFragment() {
         // Required empty public constructor
@@ -57,8 +54,8 @@ public class GalleryFragment extends Fragment {
         mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
 
         // use a linear layout manager
-        RecyclerView.LayoutManager layoutManager = new GalleryLayoutManager();
-        mRecyclerView.setLayoutManager(layoutManager);
+        mLayoutManager = new GalleryLayoutManager();
+        mRecyclerView.setLayoutManager(mLayoutManager);
         InsetDecoration dd = new InsetDecoration(50);
         mRecyclerView.addItemDecoration(dd);
 
@@ -67,14 +64,8 @@ public class GalleryFragment extends Fragment {
                 "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"});
         mRecyclerView.setAdapter(adapter);
         mRecyclerView.setOnScrollListener(new OnScrollListener());
+        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(0), 0);
         return view;
-    }
-
-    private boolean isLandscape() {
-        Display display = getActivity().getWindowManager().getDefaultDisplay();
-        Rect rect = new Rect();
-        display.getRectSize(rect);
-        return rect.width() > rect.height();
     }
 
     @Override
@@ -149,17 +140,28 @@ public class GalleryFragment extends Fragment {
             ViewHolder holder = new ViewHolder(v, new IViewHolderListener() {
                 @Override
                 public void onCardClick(int position) {
-                    openDetailsForCard(images[position % 5], mDataset[position]);
+                    int centeredPosition = mLayoutManager.getCurrentCenteredPosition();
+                    Log.d(TAG, "Current centered position = " + centeredPosition);
+                    Log.d(TAG, "Current position = " + position);
+                    if (centeredPosition == position) {
+                        openDetailsForCard(images[position % 5], mDataset[position]);
+                    } else {
+                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
+                    }
                 }
 
                 @Override
                 public void onFirstButtonClick(int position) {
                     Log.d(TAG, "First button clicked for position: " + position);
+                    if (position > 0)
+                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position - 1), 0);
                 }
 
                 @Override
                 public void onSecondButtonClick(int position) {
                     Log.d(TAG, "Second button clicked for position: " + position);
+                    if (position < mDataset.length - 1)
+                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position + 1), 0);
                 }
             });
             return holder;
@@ -172,8 +174,8 @@ public class GalleryFragment extends Fragment {
             // - replace the contents of the view with that element
             holder.setPosition(position);
             holder.titleText.setText(mDataset[position]);
-            holder.button1.setText("Button 1");
-            holder.button2.setText("Button 2");
+            holder.button1.setText(getText(R.string.description_prev));
+            holder.button2.setText(getText(R.string.description_next));
             Glide.with(GalleryFragment.this)
                     .load(images[position % 5])
                     .fitCenter()
@@ -241,18 +243,16 @@ public class GalleryFragment extends Fragment {
         @Override
         public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
             super.onScrolled(recyclerView, dx, dy);
-            if (isLandscape()) return;
-            if ((mTotalScrollY > 0 && dy < 0) || (mTotalScrollY < 0 && dy > 0)) mTotalScrollY = 0;
-            mTotalScrollY += dy;
-            if (Math.signum(mTotalScrollY) < 0 && Math.abs(mTotalScrollY) > 250)
-                ((MainActivity) getActivity()).onToolBarShowOrHide(true);
-            else if (Math.signum(mTotalScrollY) > 0 && Math.abs(mTotalScrollY) > 1000)
-                ((MainActivity) getActivity()).onToolBarShowOrHide(false);
+            mLayoutManager.onScrolled();
         }
 
         @Override
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
+            if (RecyclerView.SCROLL_STATE_IDLE == newState) {
+                int centeredItem = mLayoutManager.getCurrentCenteredPosition();
+                mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(centeredItem), 0);
+            }
         }
     }
 }

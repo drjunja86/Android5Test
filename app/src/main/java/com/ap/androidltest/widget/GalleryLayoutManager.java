@@ -1,7 +1,5 @@
 package com.ap.androidltest.widget;
 
-import android.graphics.PointF;
-import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
@@ -93,7 +91,8 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
                 childLeft = childTop = 0;
                 mForceClearOffsets = false;
             } else {
-                childLeft = mFirstItemOffset;
+                if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
+                else childLeft = getChildAt(0).getLeft();
                 childTop = 0;
             }
 
@@ -294,43 +293,9 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         requestLayout();
     }
 
-    /*
-     * You must override this method if you would like to support external calls
-     * to animate a change to a new adapter position. The framework provides a
-     * helper scroller implementation (LinearSmoothScroller), which we leverage
-     * to do the animation calculations.
-     */
     @Override
     public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, final int position) {
-        if (position >= getItemCount()) {
-            Log.e(TAG, "Cannot scroll to " + position + ", item count is " + getItemCount());
-            return;
-        }
-
-        /*
-         * LinearSmoothScroller's default behavior is to scroll the contents until
-         * the child is fully visible. It will snap to the top-left or bottom-right
-         * of the parent depending on whether the direction of travel was positive
-         * or negative.
-         */
-        LinearSmoothScroller scroller = new LinearSmoothScroller(recyclerView.getContext()) {
-            /*
-             * LinearSmoothScroller, at a minimum, just need to know the vector
-             * (x/y distance) to travel in order to get from the current positioning
-             * to the target.
-             */
-            @Override
-            public PointF computeScrollVectorForPosition(int targetPosition) {
-                final int rowOffset = getGlobalRowOfPosition(targetPosition)
-                        - getGlobalRowOfPosition(mFirstVisiblePosition);
-                final int columnOffset = getGlobalColumnOfPosition(targetPosition)
-                        - getGlobalColumnOfPosition(mFirstVisiblePosition);
-
-                return new PointF(columnOffset * mDecoratedChildWidth, rowOffset * mDecoratedChildHeight);
-            }
-        };
-        scroller.setTargetPosition(position);
-        startSmoothScroll(scroller);
+        Log.e(TAG, "Method smoothScrollToPosition is not supported. Use smoothScrollBy");
     }
 
     /*
@@ -481,18 +446,40 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         return null;
     }
 
-    /**
-     * Private Helpers and Metrics Accessors
-     */
-
-    /* Return the overall column index of this position in the global layout */
-    private int getGlobalColumnOfPosition(int position) {
-        return position % getTotalColumnCount();
+    public int getCurrentCenteredPosition() {
+        View child;
+        for (int i = 0; i < getChildCount(); i++) {
+            child = getChildAt(i);
+            if (getDecoratedRight(child) > getScreenWidth() / 2) {
+                return positionOfIndex(i);
+            }
+        }
+        return -1;
     }
 
-    /* Return the overall row index of this position in the global layout */
-    private int getGlobalRowOfPosition(int position) {
-        return position / getTotalColumnCount();
+    public int getOffsetToItem(int position) {
+        if (position < 0 || position >= getTotalColumnCount()) return 0;
+        View zeroChild = getChildAt(0);
+        int left = getDecoratedLeft(zeroChild);
+        int zeroChildPosition = positionOfIndex(0);
+        int columnsOffset = (position - zeroChildPosition) * mDecoratedChildWidth;
+        return left - getCenteredItemOffset() + columnsOffset;
+    }
+
+    public void onScrolled() {
+        for (int i = 0; i < getVisibleChildCount(); i++) {
+            View child = getChildAt(i);
+            if (child == null) continue;
+            int left = getDecoratedLeft(child);
+            int right = getDecoratedRight(child);
+            float center = (float) (left + (right - left) / 2);
+            float halfScreen = (float) getWidth() / 2;
+            float distanceFromCenter = Math.abs(halfScreen - center) / 4;
+            float scale = 1 - distanceFromCenter / halfScreen;
+            if (scale < 0.8f) scale = 0.8f;
+            child.setScaleX(scale);
+            child.setScaleY(scale);
+        }
     }
 
     /*
@@ -522,8 +509,12 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         return getItemCount();
     }
 
+    private int getScreenWidth() {
+        return getWidth() - getPaddingRight() - getPaddingLeft();
+    }
+
     private int getHorizontalSpace() {
-        return getWidth() - getPaddingRight() - getPaddingLeft() - mFirstItemOffset;
+        return getScreenWidth() - mFirstItemOffset;
     }
 
     private int getVerticalSpace() {
@@ -531,6 +522,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
     }
 
     private int getCenteredItemOffset() {
-        return (getWidth() - getPaddingRight() - getPaddingLeft() - mDecoratedChildWidth) / 2;
+        return (getScreenWidth() - mDecoratedChildWidth) / 2;
     }
 }

@@ -17,5 +17,7 @@
     <string name="title_activity_search">SearchActivity</string>
     <string name="title_search">Search</string>
     <string name="description_search">Search</string>
+    <string name="description_next">NEXT</string>
+    <string name="description_prev">PREVIOUS</string>
 
 </resources>
