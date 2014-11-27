@@ -13,15 +13,16 @@ import android.view.View;
  */
 public class InsetDecoration extends RecyclerView.ItemDecoration {
 
-    private int mInsets;
+    private int mVerticalInsets, mHorizontalInsets;
 
-    public InsetDecoration(int insets) {
-        mInsets = insets;
+    public InsetDecoration(int horizontalInsets, int verticalInsets) {
+        mHorizontalInsets = horizontalInsets;
+        mVerticalInsets = verticalInsets;
     }
 
     @Override
     public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state) {
         //We can supply forced insets for each item view here in the Rect
-        outRect.set(mInsets, mInsets, mInsets, mInsets);
+        outRect.set(mHorizontalInsets, mVerticalInsets, mHorizontalInsets, mVerticalInsets);
     }
 }

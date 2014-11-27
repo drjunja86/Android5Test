@@ -40,7 +40,7 @@
                 android:id="@+id/all_text"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingLeft="@dimen/activity_hotizontal_content_padding"
+                android:paddingLeft="@dimen/activity_horizontal_content_padding"
                 android:paddingRight="@dimen/activity_horizontal_margin"
                 android:paddingTop="20dp"
                 android:text="@string/lorem_ip_sum"

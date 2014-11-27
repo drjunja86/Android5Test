@@ -28,6 +28,8 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
     /* Flag to force current scroll offsets to be ignored on re-layout */
     private boolean mForceClearOffsets;
     private int mFirstItemOffset, mLastItemOffset;
+    private float mMinScale = 0.8f;
+    private float mMinAlpha = 1.0f;
 
     /*
      * This method is your initial call from the framework. You will receive it when you
@@ -76,7 +78,9 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
              * Reset the visible and scroll positions
              */
             mFirstVisiblePosition = 0;
-            childLeft = childTop = 0;
+            childTop = 0;
+            if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
+            else childLeft = 0;
         } else if (getVisibleChildCount() > getItemCount()) {
             //Data set is too small to scroll fully, just reset position
             mFirstVisiblePosition = 0;
@@ -86,38 +90,13 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
              * Keep the existing initial position, and save off
              * the current scrolled offset.
              */
-//            final View leftChild = getChildAt(0);
             if (mForceClearOffsets) {
                 childLeft = childTop = 0;
                 mForceClearOffsets = false;
             } else {
                 if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
-                else childLeft = getChildAt(0).getLeft();
+                else childLeft = getDecoratedLeft(getChildAt(0));
                 childTop = 0;
-            }
-
-            /*
-             * Adjust the visible position if out of bounds in the
-             * new layout. This occurs when the new item count in an adapter
-             * is much smaller than it was before, and you are scrolled to
-             * a location where no items would exist.
-             */
-            int lastVisiblePosition = positionOfIndex(getVisibleChildCount() - 1);
-            if (lastVisiblePosition >= getItemCount()) {
-                lastVisiblePosition = (getItemCount() - 1);
-                int lastColumn = mVisibleColumnCount - 1;
-
-                //Adjust to align the last position in the bottom-right
-                mFirstVisiblePosition = Math.max(lastVisiblePosition - lastColumn, 0);
-
-                childLeft = getHorizontalSpace() - (mDecoratedChildWidth * mVisibleColumnCount);
-                childTop = getVerticalSpace() - mDecoratedChildHeight;
-
-                //Correct cases where shifting to the bottom-right overscrolls the top-left
-                // This happens on data sets too small to scroll in a direction.
-                if (getFirstVisibleColumn() == 0) {
-                    childLeft = Math.min(childLeft, 0);
-                }
             }
         }
 
@@ -270,6 +249,7 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         for (int i = 0; i < viewCache.size(); i++) {
             recycler.recycleView(viewCache.valueAt(i));
         }
+        scaleAllItems();
     }
 
     /*
@@ -331,7 +311,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
 //        Log.d(TAG, "dx = " + dx);
 //        Log.d(TAG, "getDecoratedLeft(topView) = " + getDecoratedLeft(topView));
 //        Log.d(TAG, "getDecoratedRight(bottomView) = " + getDecoratedRight(bottomView));
-//        Log.d(TAG, "getWidth() = " + getWidth());
 
         if (getFirstVisibleColumn() == 0) mFirstItemOffset = getDecoratedLeft(topView);
         else mFirstItemOffset = 0;
@@ -347,13 +326,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         else if (mLastItemOffset > getCenteredItemOffset())
             mLastItemOffset = getCenteredItemOffset();
 
-
-        //Optimize the case where the entire data set is too small to scroll
-        int viewSpan = getDecoratedRight(bottomView) - getDecoratedLeft(topView);
-        if (viewSpan <= getHorizontalSpace()) {
-            //We cannot scroll in either direction
-            return 0;
-        }
 
 //        Log.d(TAG, "First item offset: " + mFirstItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
 //        Log.d(TAG, "Last item offset: " + mLastItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
@@ -450,7 +422,7 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         View child;
         for (int i = 0; i < getChildCount(); i++) {
             child = getChildAt(i);
-            if (getDecoratedRight(child) > getScreenWidth() / 2) {
+            if (getDecoratedRight(child) > getHorizontalSpace() / 2) {
                 return positionOfIndex(i);
             }
         }
@@ -460,13 +432,15 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
     public int getOffsetToItem(int position) {
         if (position < 0 || position >= getTotalColumnCount()) return 0;
         View zeroChild = getChildAt(0);
+        if (zeroChild == null) return 0;
         int left = getDecoratedLeft(zeroChild);
         int zeroChildPosition = positionOfIndex(0);
         int columnsOffset = (position - zeroChildPosition) * mDecoratedChildWidth;
-        return left - getCenteredItemOffset() + columnsOffset;
+        int offset = left - getCenteredItemOffset() + columnsOffset;
+        return (offset >= -1 && offset <= 1) ? 0 : offset;
     }
 
-    public void onScrolled() {
+    private void scaleAllItems() {
         for (int i = 0; i < getVisibleChildCount(); i++) {
             View child = getChildAt(i);
             if (child == null) continue;
@@ -474,12 +448,25 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
             int right = getDecoratedRight(child);
             float center = (float) (left + (right - left) / 2);
             float halfScreen = (float) getWidth() / 2;
-            float distanceFromCenter = Math.abs(halfScreen - center) / 4;
+            float distanceFromCenter = Math.abs(halfScreen - center) / 2; // divided by 4 to start resizing earlier
             float scale = 1 - distanceFromCenter / halfScreen;
-            if (scale < 0.8f) scale = 0.8f;
+            float alpha = scale;
+            if (scale < mMinScale) scale = mMinScale;
+            if (alpha < mMinAlpha) alpha = mMinAlpha;
             child.setScaleX(scale);
             child.setScaleY(scale);
+            child.setAlpha(alpha);
         }
+    }
+
+    public void setMinimumScale(float minScale) {
+        mMinScale = minScale;
+        scaleAllItems();
+    }
+
+    public void setMinimumAlpha(float minAlpha) {
+        mMinAlpha = minAlpha;
+        scaleAllItems();
     }
 
     /*
@@ -509,19 +496,11 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         return getItemCount();
     }
 
-    private int getScreenWidth() {
+    private int getHorizontalSpace() {
         return getWidth() - getPaddingRight() - getPaddingLeft();
     }
 
-    private int getHorizontalSpace() {
-        return getScreenWidth() - mFirstItemOffset;
-    }
-
-    private int getVerticalSpace() {
-        return getHeight() - getPaddingBottom() - getPaddingTop();
-    }
-
     private int getCenteredItemOffset() {
-        return (getScreenWidth() - mDecoratedChildWidth) / 2;
+        return (getHorizontalSpace() - mDecoratedChildWidth) / 2;
     }
 }
