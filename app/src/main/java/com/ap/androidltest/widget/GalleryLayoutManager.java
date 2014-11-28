@@ -1,5 +1,7 @@
 package com.ap.androidltest.widget;
 
+import android.os.Parcel;
+import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
@@ -17,19 +19,32 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
     private static final int DIRECTION_NONE = -1;
     private static final int DIRECTION_START = 0;
     private static final int DIRECTION_END = 1;
-
+    private static final int NOT_SET = Integer.MIN_VALUE;
+    /* Flag to force current scroll offsets to be ignored on re-layout */
+    private int mFirstItemOffset = NOT_SET, mLastItemOffset = NOT_SET;
+    private int mPendingCenteredPosition = NOT_SET;
     /* First (top-left) position visible at any point */
-    private int mFirstVisiblePosition;
+    private int mFirstVisiblePosition = 0;
     /* Consistent size applied to all child views */
     private int mDecoratedChildWidth;
     private int mDecoratedChildHeight;
     /* Metrics for the visible window of our data */
     private int mVisibleColumnCount;
-    /* Flag to force current scroll offsets to be ignored on re-layout */
-    private boolean mForceClearOffsets;
-    private int mFirstItemOffset, mLastItemOffset;
     private float mMinScale = 0.8f;
     private float mMinAlpha = 1.0f;
+
+    @Override
+    public Parcelable onSaveInstanceState() {
+        final SavedState state = new SavedState(SavedState.EMPTY_STATE);
+        state.centerItemPosition = getCurrentCenteredPosition();
+        return state;
+    }
+
+    @Override
+    public void onRestoreInstanceState(Parcelable state) {
+        SavedState pendingState = (SavedState) state;
+        mPendingCenteredPosition = pendingState.centerItemPosition;
+    }
 
     /*
      * This method is your initial call from the framework. You will receive it when you
@@ -62,8 +77,10 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
              */
             mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
             mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
-            mFirstItemOffset = getCenteredItemOffset();
-            mLastItemOffset = 0;
+            if (mFirstItemOffset == NOT_SET)
+                mFirstItemOffset = getCenteredItemOffset();
+            if (mLastItemOffset == NOT_SET)
+                mLastItemOffset = 0;
 
             detachAndScrapView(scrap, recycler);
         }
@@ -71,33 +88,38 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         //Always update the visible row/column counts
         updateWindowSizing();
 
+
         int childLeft;
-        int childTop;
-        if (getChildCount() == 0) { //First or empty layout
-            /*
-             * Reset the visible and scroll positions
-             */
-            mFirstVisiblePosition = 0;
-            childTop = 0;
-            if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
+        int childTop = 0;
+
+        if (mPendingCenteredPosition != NOT_SET) {
+            int centeredChild = Math.round((float) getVisibleChildCount() / 2.0f) - 1;
+            if (mPendingCenteredPosition <= centeredChild) {
+                //situation when most left item should have padding from left
+                mFirstItemOffset = getCenteredItemOffset() - mPendingCenteredPosition * mDecoratedChildWidth;
+                mFirstVisiblePosition = 0;
+                childLeft = mFirstItemOffset;
+            } else {
+                //situation when there are should be items which go out of screen before the centered item
+                mFirstItemOffset = 0;
+                mFirstVisiblePosition = mPendingCenteredPosition - centeredChild;
+                childLeft = getCenteredItemOffset() - centeredChild * mDecoratedChildWidth;
+            }
+            mPendingCenteredPosition = NOT_SET;
+        } else if (getChildCount() == 0) { //First or empty layout
+            if (mFirstVisiblePosition == 0 && mFirstItemOffset > 0) childLeft = mFirstItemOffset;
             else childLeft = 0;
         } else if (getVisibleChildCount() > getItemCount()) {
             //Data set is too small to scroll fully, just reset position
             mFirstVisiblePosition = 0;
-            childLeft = childTop = 0;
+            childLeft = 0;
         } else { //Adapter data set changes
             /*
              * Keep the existing initial position, and save off
              * the current scrolled offset.
              */
-            if (mForceClearOffsets) {
-                childLeft = childTop = 0;
-                mForceClearOffsets = false;
-            } else {
-                if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
-                else childLeft = getDecoratedLeft(getChildAt(0));
-                childTop = 0;
-            }
+            if (mFirstItemOffset > 0) childLeft = mFirstItemOffset;
+            else childLeft = getDecoratedLeft(getChildAt(0)) - getPaddingLeft();
         }
 
         //Clear all attached views into the recycle bin
@@ -105,6 +127,7 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
 
         //Fill the grid for the initial layout of views
         fillGrid(DIRECTION_NONE, childLeft, childTop, recycler);
+        scaleAllItems();
     }
 
     @Override
@@ -249,28 +272,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         for (int i = 0; i < viewCache.size(); i++) {
             recycler.recycleView(viewCache.valueAt(i));
         }
-        scaleAllItems();
-    }
-
-    /*
-     * You must override this method if you would like to support external calls
-     * to shift the view to a given adapter position. In our implementation, this
-     * is the same as doing a fresh layout with the given position as the top-left
-     * (or first visible), so we simply set that value and trigger onLayoutChildren()
-     */
-    @Override
-    public void scrollToPosition(int position) {
-        if (position >= getItemCount()) {
-            Log.e(TAG, "Cannot scroll to " + position + ", item count is " + getItemCount());
-            return;
-        }
-
-        //Ignore current scroll offset, snap to top-left
-        mForceClearOffsets = true;
-        //Set requested position as first visible
-        mFirstVisiblePosition = position;
-        //Trigger a new view layout
-        requestLayout();
     }
 
     @Override
@@ -323,23 +324,25 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
             mLastItemOffset = getHorizontalSpace() - getDecoratedRight(bottomView);
         else mLastItemOffset = 0;
         if (mLastItemOffset < 0) mLastItemOffset = 0;
-        else if (mLastItemOffset > getCenteredItemOffset())
-            mLastItemOffset = getCenteredItemOffset();
+        else if (mLastItemOffset > getCenteredItemOffset() - getPaddingRight())
+            mLastItemOffset = getCenteredItemOffset() - getPaddingRight();
 
 
 //        Log.d(TAG, "First item offset: " + mFirstItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
 //        Log.d(TAG, "Last item offset: " + mLastItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
 
         int delta;
-        boolean leftBoundReached = getFirstVisibleColumn() == 0 && mFirstItemOffset >= getCenteredItemOffset();
-        boolean rightBoundReached = getLastVisibleColumn() >= getTotalColumnCount() && mLastItemOffset >= getCenteredItemOffset();
+        boolean leftBoundReached = getFirstVisibleColumn() == 0 &&
+                mFirstItemOffset >= getCenteredItemOffset();
+        boolean rightBoundReached = getLastVisibleColumn() >= getTotalColumnCount() &&
+                mLastItemOffset >= getCenteredItemOffset() - getPaddingRight();
 
         if (dx > 0) { // Contents are scrolling left
 //            Log.d(TAG, "Contents are scrolling left, rightBoundReached = " + rightBoundReached);
             //Check right bound
             if (rightBoundReached) {
                 //If we've reached the last column, enforce limits
-                int rightOffset = (getHorizontalSpace() - getCenteredItemOffset()) - getDecoratedRight(bottomView);
+                int rightOffset = (getHorizontalSpace() - getCenteredItemOffset()) - getDecoratedRight(bottomView) + getPaddingRight();
                 delta = Math.max(-dx, rightOffset);
             } else {
                 //No limits while the last column isn't visible
@@ -372,6 +375,8 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
                 fillGrid(DIRECTION_NONE, recycler);
             }
         }
+
+        scaleAllItems();
 
         /*
          * Return value determines if a boundary has been reached
@@ -433,7 +438,7 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         if (position < 0 || position >= getTotalColumnCount()) return 0;
         View zeroChild = getChildAt(0);
         if (zeroChild == null) return 0;
-        int left = getDecoratedLeft(zeroChild);
+        int left = getDecoratedLeft(zeroChild) - getPaddingLeft();
         int zeroChildPosition = positionOfIndex(0);
         int columnsOffset = (position - zeroChildPosition) * mDecoratedChildWidth;
         int offset = left - getCenteredItemOffset() + columnsOffset;
@@ -502,5 +507,46 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
 
     private int getCenteredItemOffset() {
         return (getHorizontalSpace() - mDecoratedChildWidth) / 2;
+    }
+
+
+    protected static class SavedState implements Parcelable {
+        public static final Parcelable.Creator<SavedState> CREATOR
+                = new Parcelable.Creator<SavedState>() {
+            @Override
+            public SavedState createFromParcel(Parcel in) {
+                return new SavedState(in);
+            }
+
+            @Override
+            public SavedState[] newArray(int size) {
+                return new SavedState[size];
+            }
+        };
+        protected static final SavedState EMPTY_STATE = new SavedState();
+        private int centerItemPosition;
+
+        private SavedState() {
+        }
+
+        protected SavedState(Parcelable superState) {
+            if (superState == null) {
+                throw new IllegalArgumentException("superState must not be null");
+            }
+        }
+
+        protected SavedState(Parcel in) {
+            centerItemPosition = in.readInt();
+        }
+
+        @Override
+        public int describeContents() {
+            return 0;
+        }
+
+        @Override
+        public void writeToParcel(Parcel out, int flags) {
+            out.writeInt(centerItemPosition);
+        }
     }
 }

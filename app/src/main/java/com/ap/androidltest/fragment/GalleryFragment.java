@@ -31,11 +31,9 @@ import com.bumptech.glide.Glide;
 public class GalleryFragment extends Fragment {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
-    private static final String KEY_CENTERED_ITEM = "KEY_CENTERED_ITEM";
     GalleryLayoutManager mLayoutManager;
     private RecyclerView mRecyclerView;
     private ImageView mPressedImageView;
-    private int mCenteredItem = 0;
 
     public GalleryFragment() {
         // Required empty public constructor
@@ -67,19 +65,7 @@ public class GalleryFragment extends Fragment {
         MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2", "String 3", "String 4",
                 "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"});
         mRecyclerView.setAdapter(adapter);
-        mRecyclerView.setOnScrollListener(new OnScrollListener());
-
-        if (savedInstanceState == null) mCenteredItem = 0;
-        else mCenteredItem = savedInstanceState.getInt(KEY_CENTERED_ITEM, 0);
-        mRecyclerView.scrollBy(mLayoutManager.getOffsetToItem(mCenteredItem), 0);
-
         return view;
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        outState.putInt(KEY_CENTERED_ITEM, mCenteredItem);
-        super.onSaveInstanceState(outState);
     }
 
     @Override
@@ -154,15 +140,12 @@ public class GalleryFragment extends Fragment {
                 @Override
                 public void onCardClick(int position) {
                     int centeredPosition = mLayoutManager.getCurrentCenteredPosition();
-                    Log.d(TAG, "Current centered position = " + centeredPosition);
-                    Log.d(TAG, "Current position = " + position);
                     if (centeredPosition == position) {
                         openDetailsForCard(images[position % 5], mDataset[position]);
                     } else {
-//                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
-                        MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2"});
-                        mRecyclerView.setAdapter(adapter);
-//                        adapter.notifyDataSetChanged();
+                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
+//                        MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2"});
+//                        mRecyclerView.setAdapter(adapter);
                     }
                 }
 
@@ -265,10 +248,8 @@ public class GalleryFragment extends Fragment {
         public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
             super.onScrollStateChanged(recyclerView, newState);
             if (RecyclerView.SCROLL_STATE_IDLE == newState) {
-                mCenteredItem = mLayoutManager.getCurrentCenteredPosition();
-//                Log.d(TAG, "onScrollStateChanged centeredItem = " + centeredItem);
-//                Log.d(TAG, "onScrollStateChanged mLayoutManager.getOffsetToItem(centeredItem) = " + mLayoutManager.getOffsetToItem(centeredItem));
-                mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(mCenteredItem), 0);
+                int centeredItem = mLayoutManager.getCurrentCenteredPosition();
+                mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(centeredItem), 0);
             }
         }
     }
