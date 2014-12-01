@@ -25,4 +25,14 @@ public class InsetDecoration extends RecyclerView.ItemDecoration {
         //We can supply forced insets for each item view here in the Rect
         outRect.set(mHorizontalInsets, mVerticalInsets, mHorizontalInsets, mVerticalInsets);
     }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setVerticalInsets(int verticalInsets) {
+        mVerticalInsets = verticalInsets;
+    }
+
+    @SuppressWarnings("UnusedDeclaration")
+    public void setHorizontalInsets(int horizontalInsets) {
+        mHorizontalInsets = horizontalInsets;
+    }
 }

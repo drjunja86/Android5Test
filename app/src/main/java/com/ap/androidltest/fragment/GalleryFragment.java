@@ -20,20 +20,21 @@ import android.widget.TextView;
 
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
-import com.ap.androidltest.widget.GalleryLayoutManager;
-import com.ap.androidltest.widget.decoration.InsetDecoration;
+import com.ap.androidltest.widget.GalleryRecyclerView;
 import com.bumptech.glide.Glide;
 
 
 /**
  * A simple {@link android.app.Fragment} subclass.
  */
-public class GalleryFragment extends Fragment {
+public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnItemClickListener {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
-    GalleryLayoutManager mLayoutManager;
-    private RecyclerView mRecyclerView;
+    private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
+    private GalleryRecyclerView mRecyclerView;
     private ImageView mPressedImageView;
+    private String[] mDataSet = new String[]{"String 1", "String 2", "String 3", "String 4",
+            "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"};
 
     public GalleryFragment() {
         // Required empty public constructor
@@ -49,35 +50,26 @@ public class GalleryFragment extends Fragment {
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_recycle_view, container, false);
-
-        mRecyclerView = (RecyclerView) view.findViewById(R.id.recycler_view);
-
-        // use a linear layout manager
-        mLayoutManager = new GalleryLayoutManager();
-        mLayoutManager.setMinimumScale(0.7f);
-        mLayoutManager.setMinimumAlpha(0.8f);
-        mRecyclerView.setLayoutManager(mLayoutManager);
-        InsetDecoration dd = new InsetDecoration(0, getResources().getDimensionPixelSize(R.dimen.space_between_items));
-        mRecyclerView.addItemDecoration(dd);
-
+        View view = inflater.inflate(R.layout.fragment_gallery, container, false);
+        mRecyclerView = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
         // specify an adapter (see also next example)
-        MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2", "String 3", "String 4",
-                "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"});
+        MyAdapter adapter = new MyAdapter();
         mRecyclerView.setAdapter(adapter);
+        mRecyclerView.getDefaultDecoration().setHorizontalInsets(
+                getResources().getDimensionPixelSize(R.dimen.space_between_items));
         return view;
     }
 
     @Override
     public void onPause() {
         super.onPause();
-        mRecyclerView.setOnScrollListener(null);
+        mRecyclerView.setOnItemClickListener(null);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mRecyclerView.setOnScrollListener(new OnScrollListener());
+        mRecyclerView.setOnItemClickListener(this);
     }
 
     private void openDetailsForCard(final int imageId, final String title) {
@@ -109,22 +101,23 @@ public class GalleryFragment extends Fragment {
         ActivityCompat.startActivity(getActivity(), intent, options.toBundle());
     }
 
+    @Override
+    public void onItemClick(View view, int position) {
+        mPressedImageView = (ImageView) view.findViewById(R.id.info_image);
+        openDetailsForCard(images[position % 5], mDataSet[position]);
+    }
+
+    @Override
+    public void onItemLongClick(View view, int position) {
+        //action on long click
+    }
+
     public static interface IViewHolderListener {
-        void onCardClick(int position);
-
         void onFirstButtonClick(int position);
-
         void onSecondButtonClick(int position);
     }
 
     public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
-        private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
-        private String[] mDataset;
-
-        // Provide a suitable constructor (depends on the kind of dataset)
-        public MyAdapter(String[] myDataset) {
-            mDataset = myDataset;
-        }
 
         // Create new views (invoked by the layout manager)
         @Override
@@ -138,29 +131,17 @@ public class GalleryFragment extends Fragment {
             //noinspection UnnecessaryLocalVariable
             ViewHolder holder = new ViewHolder(v, new IViewHolderListener() {
                 @Override
-                public void onCardClick(int position) {
-                    int centeredPosition = mLayoutManager.getCurrentCenteredPosition();
-                    if (centeredPosition == position) {
-                        openDetailsForCard(images[position % 5], mDataset[position]);
-                    } else {
-                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
-//                        MyAdapter adapter = new MyAdapter(new String[]{"String 1", "String 2"});
-//                        mRecyclerView.setAdapter(adapter);
-                    }
-                }
-
-                @Override
                 public void onFirstButtonClick(int position) {
                     Log.d(TAG, "First button clicked for position: " + position);
                     if (position > 0)
-                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position - 1), 0);
+                        mRecyclerView.smoothScrollToPosition(position - 1);
                 }
 
                 @Override
                 public void onSecondButtonClick(int position) {
                     Log.d(TAG, "Second button clicked for position: " + position);
-                    if (position < mDataset.length - 1)
-                        mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(position + 1), 0);
+                    if (position < mDataSet.length - 1)
+                        mRecyclerView.smoothScrollToPosition(position + 1);
                 }
             });
             return holder;
@@ -172,7 +153,7 @@ public class GalleryFragment extends Fragment {
             // - get element from your dataset at this position
             // - replace the contents of the view with that element
             holder.setPosition(position);
-            holder.titleText.setText(mDataset[position]);
+            holder.titleText.setText(mDataSet[position]);
             holder.button1.setText(getText(R.string.description_prev));
             holder.button2.setText(getText(R.string.description_next));
             Glide.with(GalleryFragment.this)
@@ -184,7 +165,7 @@ public class GalleryFragment extends Fragment {
         // Return the size of your dataset (invoked by the layout manager)
         @Override
         public int getItemCount() {
-            return mDataset.length;
+            return mDataSet.length;
         }
 
         // Provide a reference to the views for each data item
@@ -211,9 +192,14 @@ public class GalleryFragment extends Fragment {
                 image = (ImageView) v.findViewById(R.id.info_image);
 
                 mListener = listener;
-                image.setOnClickListener(this);
                 button1.setOnClickListener(this);
                 button2.setOnClickListener(this);
+                v.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mRecyclerView.onItemClick(v, mPosition);
+                    }
+                });
             }
 
             @Override
@@ -225,31 +211,11 @@ public class GalleryFragment extends Fragment {
                     case R.id.card_button_2:
                         mListener.onSecondButtonClick(mPosition);
                         break;
-                    case R.id.info_image:
-                        mPressedImageView = (ImageView) v;
-                        mListener.onCardClick(mPosition);
-                        break;
                 }
             }
 
             public void setPosition(int position) {
                 mPosition = position;
-            }
-        }
-    }
-
-    private class OnScrollListener extends RecyclerView.OnScrollListener {
-        @Override
-        public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
-            super.onScrolled(recyclerView, dx, dy);
-        }
-
-        @Override
-        public void onScrollStateChanged(RecyclerView recyclerView, int newState) {
-            super.onScrollStateChanged(recyclerView, newState);
-            if (RecyclerView.SCROLL_STATE_IDLE == newState) {
-                int centeredItem = mLayoutManager.getCurrentCenteredPosition();
-                mRecyclerView.smoothScrollBy(mLayoutManager.getOffsetToItem(centeredItem), 0);
             }
         }
     }
