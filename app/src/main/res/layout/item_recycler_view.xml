@@ -20,7 +20,8 @@
             android:layout_height="@dimen/info_image_height"
             android:contentDescription="@string/no_content_description"
             android:scaleType="centerCrop"
-            android:transitionName="@string/transition_image" />
+            android:transitionName="@string/transition_image"
+            tools:ignore="UnusedAttribute" />
 
         <TextView
             android:id="@+id/info_text"

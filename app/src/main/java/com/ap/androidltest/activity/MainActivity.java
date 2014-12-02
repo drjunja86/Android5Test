@@ -18,6 +18,7 @@ import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 import com.ap.androidltest.R;
+import com.ap.androidltest.fragment.AllItemsFragment;
 import com.ap.androidltest.fragment.GalleryFragment;
 import com.ap.androidltest.fragment.RecycleViewFragment;
 
@@ -57,10 +58,10 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         mDrawerList.setAdapter(new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
-                new String[]{"Screen 1", "Screen 2", "Screen 3"}));
+                new String[]{"RecycleView + Details", "Gallery + Details", "Elements"}));
 
         if (savedInstanceState == null) {
-            setFragment(1);
+            setFragment(0);
         }
         else mToolbarOffsetY = savedInstanceState.getInt(KEY_TOOLBAR_OFFSET_Y);
         onToolBarShowOrHide(true);
@@ -150,7 +151,7 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 fragment = new GalleryFragment();
                 break;
             default:
-                fragment = new RecycleViewFragment();
+                fragment = new AllItemsFragment();
                 break;
         }
 
