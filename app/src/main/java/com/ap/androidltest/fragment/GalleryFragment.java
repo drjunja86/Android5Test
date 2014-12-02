@@ -21,6 +21,7 @@ import android.widget.TextView;
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
 import com.ap.androidltest.widget.GalleryRecyclerView;
+import com.ap.androidltest.widget.GalleryViewHolder;
 import com.bumptech.glide.Glide;
 
 
@@ -171,7 +172,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
         // Provide a reference to the views for each data item
         // Complex data items may need more than one view per item, and
         // you provide access to all the views for a data item in a view holder
-        public class ViewHolder extends RecyclerView.ViewHolder implements View.OnClickListener {
+        public class ViewHolder extends GalleryViewHolder implements View.OnClickListener {
             public TextView titleText;
             public Button button1;
             public Button button2;
@@ -182,7 +183,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
             private int mPosition;
 
             public ViewHolder(View v, IViewHolderListener listener) {
-                super(v);
+                super(v, mRecyclerView);
                 cardView = (CardView) v.findViewById(R.id.card_view);
                 titleText = (TextView) v.findViewById(R.id.info_text);
                 button1 = (Button) v.findViewById(R.id.card_button_1);
@@ -194,12 +195,6 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
                 mListener = listener;
                 button1.setOnClickListener(this);
                 button2.setOnClickListener(this);
-                v.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mRecyclerView.onItemClick(v, mPosition);
-                    }
-                });
             }
 
             @Override
