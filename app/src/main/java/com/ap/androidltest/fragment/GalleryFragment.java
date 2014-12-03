@@ -28,11 +28,11 @@ import com.bumptech.glide.Glide;
 /**
  * A simple {@link android.app.Fragment} subclass.
  */
-public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnItemClickListener {
+public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnItemClickListener, GalleryRecyclerView.OnCenteredPositionChangedListener {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
     private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
-    private GalleryRecyclerView mRecyclerView;
+    private GalleryRecyclerView mGalleryView;
     private ImageView mPressedImageView;
     private String[] mDataSet = new String[]{"String 1", "String 2", "String 3", "String 4",
             "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"};
@@ -52,11 +52,14 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_gallery, container, false);
-        mRecyclerView = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
+        mGalleryView = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
         // specify an adapter (see also next example)
         MyAdapter adapter = new MyAdapter();
-        mRecyclerView.setAdapter(adapter);
-        mRecyclerView.getDefaultDecoration().setHorizontalInsets(
+        mGalleryView.setAdapter(adapter);
+        mGalleryView.setMinimumScale(0.7f);
+        mGalleryView.setMinimumAlpha(0.8f);
+        mGalleryView.setMaxZ(50.0f);
+        mGalleryView.getDefaultDecoration().setHorizontalInsets(
                 getResources().getDimensionPixelSize(R.dimen.space_between_items));
         return view;
     }
@@ -64,13 +67,15 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
     @Override
     public void onPause() {
         super.onPause();
-        mRecyclerView.setOnItemClickListener(null);
+        mGalleryView.setOnItemClickListener(null);
+        mGalleryView.setOnCenteredPositionChangedListener(null);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mRecyclerView.setOnItemClickListener(this);
+        mGalleryView.setOnItemClickListener(this);
+        mGalleryView.setOnCenteredPositionChangedListener(this);
     }
 
     private void openDetailsForCard(final int imageId, final String title) {
@@ -109,8 +114,15 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
     }
 
     @Override
-    public void onItemLongClick(View view, int position) {
+    public boolean onItemLongClick(View view, int position) {
         //action on long click
+        return false;
+    }
+
+    @Override
+    public void onCenteredPositionChanged(int newCenteredPosition) {
+        Log.d(TAG, "Listener will be notified about centered position change ["
+                + newCenteredPosition + "]");
     }
 
     public static interface IViewHolderListener {
@@ -135,14 +147,14 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
                 public void onFirstButtonClick(int position) {
                     Log.d(TAG, "First button clicked for position: " + position);
                     if (position > 0)
-                        mRecyclerView.smoothScrollToPosition(position - 1);
+                        mGalleryView.smoothScrollToPosition(position - 1);
                 }
 
                 @Override
                 public void onSecondButtonClick(int position) {
                     Log.d(TAG, "Second button clicked for position: " + position);
                     if (position < mDataSet.length - 1)
-                        mRecyclerView.smoothScrollToPosition(position + 1);
+                        mGalleryView.smoothScrollToPosition(position + 1);
                 }
             });
             return holder;
@@ -183,7 +195,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
             private int mPosition;
 
             public ViewHolder(View v, IViewHolderListener listener) {
-                super(v, mRecyclerView);
+                super(v, mGalleryView);
                 cardView = (CardView) v.findViewById(R.id.card_view);
                 titleText = (TextView) v.findViewById(R.id.info_text);
                 button1 = (Button) v.findViewById(R.id.card_button_1);

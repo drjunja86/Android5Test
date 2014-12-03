@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="GalleryRecyclerView">
+        <attr name="minScale" format="float" />
+        <attr name="minAlpha" format="float" />
+        <attr name="maxZ" format="float" />
+    </declare-styleable>
+</resources>

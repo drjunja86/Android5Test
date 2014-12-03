@@ -1,7 +1,9 @@
 package com.ap.androidltest.widget;
 
+import android.os.Build;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
@@ -32,6 +34,7 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
     private int mVisibleColumnCount;
     private float mMinScale = 0.8f;
     private float mMinAlpha = 1.0f;
+    private float mMaxZ = 0.0f;
 
     @Override
     public Parcelable onSaveInstanceState() {
@@ -455,22 +458,40 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
             float halfScreen = (float) getWidth() / 2;
             float distanceFromCenter = Math.abs(halfScreen - center) / 2; // divided by 4 to start resizing earlier
             float scale = 1 - distanceFromCenter / halfScreen;
+            if (scale < 0) scale = 0;
             float alpha = scale;
+            float translationZScale = scale;
             if (scale < mMinScale) scale = mMinScale;
             if (alpha < mMinAlpha) alpha = mMinAlpha;
             child.setScaleX(scale);
             child.setScaleY(scale);
             child.setAlpha(alpha);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                child.setTranslationZ(mMaxZ * translationZScale);
+            } else if (child instanceof CardView) {
+                ((CardView) child).setCardElevation(
+                        ((CardView) child).getMaxCardElevation() * translationZScale);
+            }
         }
     }
 
     public void setMinimumScale(float minScale) {
+        if (minScale < 0) minScale = 0;
+        else if (minScale > 1.0f) minScale = 1.0f;
         mMinScale = minScale;
         scaleAllItems();
     }
 
     public void setMinimumAlpha(float minAlpha) {
+        if (minAlpha < 0) minAlpha = 0;
+        else if (minAlpha > 1.0f) minAlpha = 1.0f;
         mMinAlpha = minAlpha;
+        scaleAllItems();
+    }
+
+    public void setMaxZ(float maxZ) {
+        if (maxZ < 0) maxZ = 0;
+        mMaxZ = maxZ;
         scaleAllItems();
     }
 

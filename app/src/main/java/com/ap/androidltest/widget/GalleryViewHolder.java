@@ -16,12 +16,19 @@ public class GalleryViewHolder extends RecyclerView.ViewHolder {
         @Override
         public void onClick(View v) {
             GalleryRecyclerView grv = mGalleryRecyclerView.get();
-            if (grv != null) {
-                grv.onItemClick(v, getPosition());
-            }
+            if (grv != null) grv.onItemClick(v, getPosition(), false);
         }
 
     };
+
+    final View.OnLongClickListener mLongListener = new View.OnLongClickListener() {
+        @Override
+        public boolean onLongClick(View v) {
+            GalleryRecyclerView grv = mGalleryRecyclerView.get();
+            return grv != null && grv.onItemClick(v, getPosition(), true);
+        }
+    };
+
     WeakReference<GalleryRecyclerView> mGalleryRecyclerView;
 
     public GalleryViewHolder(View itemView, GalleryRecyclerView galleryRecyclerView) {
@@ -29,6 +36,7 @@ public class GalleryViewHolder extends RecyclerView.ViewHolder {
         mGalleryRecyclerView = new WeakReference<>(galleryRecyclerView);
         if (itemView != null) {
             itemView.setOnClickListener(mListener);
+            itemView.setOnLongClickListener(mLongListener);
         }
     }
 
