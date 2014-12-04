@@ -1,0 +1,18 @@
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:custom="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.ap.androidltest.fragment.CoverFlowFragment">
+
+    <com.ap.androidltest.widget.CoverFlowRecyclerView
+        android:id="@+id/recycler_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:clipToPadding="false"
+        android:paddingTop="@dimen/tool_bar_height"
+        custom:maxZ="50"
+        custom:minAlpha="0.8"
+        custom:minScale="0.7" />
+
+</FrameLayout>

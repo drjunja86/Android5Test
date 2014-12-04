@@ -16,25 +16,25 @@ import com.ap.androidltest.widget.decoration.InsetDecoration;
  * decoration with offset equals to 50.
  */
 @SuppressWarnings("UnusedDeclaration")
-public class GalleryRecyclerView extends RecyclerView {
+public class CoverFlowRecyclerView extends RecyclerView {
 
-    private static final String TAG = GalleryRecyclerView.class.getSimpleName();
+    private static final String TAG = CoverFlowRecyclerView.class.getSimpleName();
     private InsetDecoration mDefaultDecoration;
-    private GalleryLayoutManager mLayoutManager;
+    private CoverFlowLayoutManager mLayoutManager;
     private RecyclerView.OnScrollListener mScrollListener;
     private OnItemClickListener mItemClickListener;
     private int mCenteredPosition = 0;
     private OnCenteredPositionChangedListener mCenteredPositionChangedListener;
 
-    public GalleryRecyclerView(Context context) {
+    public CoverFlowRecyclerView(Context context) {
         this(context, null);
     }
 
-    public GalleryRecyclerView(Context context, AttributeSet attrs) {
+    public CoverFlowRecyclerView(Context context, AttributeSet attrs) {
         this(context, attrs, 0);
     }
 
-    public GalleryRecyclerView(Context context, AttributeSet attrs, int defStyle) {
+    public CoverFlowRecyclerView(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
         init(context, attrs);
     }
@@ -44,7 +44,7 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     private void init(Context context, AttributeSet attrs) {
         // use a linear layout manager
-        mLayoutManager = new GalleryLayoutManager();
+        mLayoutManager = new CoverFlowLayoutManager();
         setLayoutManager(mLayoutManager);
         mDefaultDecoration = new InsetDecoration(0, 50);
         addItemDecoration(mDefaultDecoration);
@@ -69,7 +69,7 @@ public class GalleryRecyclerView extends RecyclerView {
      * only one adapter, it will be cleared.
      *
      * @param adapter The new adapter to set, or null to set no adapter.
-     * @see #swapAdapter(Adapter, boolean)
+     * @see #swapAdapter(android.support.v7.widget.RecyclerView.Adapter, boolean)
      */
     @Override
     public void setAdapter(Adapter adapter) {
@@ -116,16 +116,16 @@ public class GalleryRecyclerView extends RecyclerView {
     }
 
     /**
-     * Set new layout manager which extends GalleryLayoutManager
+     * Set new layout manager which extends CoverFlowLayoutManager
      *
-     * @param layout GalleryLayoutManager
+     * @param layout CoverFlowLayoutManager
      */
     @Override
     public void setLayoutManager(LayoutManager layout) {
-        if (layout instanceof GalleryLayoutManager) {
-            mLayoutManager = (GalleryLayoutManager) layout;
+        if (layout instanceof CoverFlowLayoutManager) {
+            mLayoutManager = (CoverFlowLayoutManager) layout;
         } else {
-            Log.e(TAG, "You can set only GalleryLayoutManager or class which extends that");
+            Log.e(TAG, "You can set only CoverFlowLayoutManager or class which extends that");
         }
         super.setLayoutManager(layout);
     }
@@ -240,24 +240,6 @@ public class GalleryRecyclerView extends RecyclerView {
         mCenteredPosition = newCenteredPosition;
         if (mCenteredPositionChangedListener != null)
             mCenteredPositionChangedListener.onCenteredPositionChanged(mCenteredPosition);
-    }
-
-    /**
-     * Return do items shown currently in loop
-     *
-     * @return boolean
-     */
-    public boolean isShowItemsInLoop() {
-        return mLayoutManager.isShowItemsInLoop();
-    }
-
-    /**
-     * Set property to show or not to show items in endless loop
-     *
-     * @param show true if show item and false if not
-     */
-    public void setShowItemsInLoop(boolean show) {
-        mLayoutManager.setShowItemsInLoop(show);
     }
 
     /**

@@ -19,6 +19,7 @@ import android.widget.ListView;
 
 import com.ap.androidltest.R;
 import com.ap.androidltest.fragment.AllItemsFragment;
+import com.ap.androidltest.fragment.CoverFlowFragment;
 import com.ap.androidltest.fragment.GalleryFragment;
 import com.ap.androidltest.fragment.RecycleViewFragment;
 
@@ -58,10 +59,10 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
         mDrawerList.setAdapter(new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
-                new String[]{"RecycleView + Details", "Gallery + Details", "Elements"}));
+                new String[]{"RecycleView + Details", "Gallery + Details", "Cover Flow + Details", "Elements"}));
 
         if (savedInstanceState == null) {
-            setFragment(0);
+            setFragment(2);
         }
         else mToolbarOffsetY = savedInstanceState.getInt(KEY_TOOLBAR_OFFSET_Y);
         onToolBarShowOrHide(true);
@@ -149,6 +150,9 @@ public class MainActivity extends ActionBarActivity implements AdapterView.OnIte
                 break;
             case 1:
                 fragment = new GalleryFragment();
+                break;
+            case 2:
+                fragment = new CoverFlowFragment();
                 break;
             default:
                 fragment = new AllItemsFragment();

@@ -20,24 +20,24 @@ import android.widget.TextView;
 
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
-import com.ap.androidltest.widget.GalleryRecyclerView;
-import com.ap.androidltest.widget.GalleryViewHolder;
+import com.ap.androidltest.widget.CoverFlowRecyclerView;
+import com.ap.androidltest.widget.CoverFlowViewHolder;
 import com.bumptech.glide.Glide;
 
 
 /**
- * A simple {@link android.app.Fragment} subclass.
+ * A simple {@link Fragment} subclass.
  */
-public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnItemClickListener, GalleryRecyclerView.OnCenteredPositionChangedListener {
+public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView.OnItemClickListener, CoverFlowRecyclerView.OnCenteredPositionChangedListener {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
     private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
-    private GalleryRecyclerView mGalleryView;
+    private CoverFlowRecyclerView mCoverFlow;
     private ImageView mPressedImageView;
     private String[] mDataSet = new String[]{"String 1", "String 2", "String 3", "String 4",
             "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"};
 
-    public GalleryFragment() {
+    public CoverFlowFragment() {
         // Required empty public constructor
     }
 
@@ -51,15 +51,15 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        View view = inflater.inflate(R.layout.fragment_gallery, container, false);
-        mGalleryView = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
+        View view = inflater.inflate(R.layout.fragment_cover_flow, container, false);
+        mCoverFlow = (CoverFlowRecyclerView) view.findViewById(R.id.recycler_view);
         // specify an adapter (see also next example)
         MyAdapter adapter = new MyAdapter();
-        mGalleryView.setAdapter(adapter);
-        mGalleryView.setMinimumScale(0.7f);
-        mGalleryView.setMinimumAlpha(0.8f);
-        mGalleryView.setMaxZ(50.0f);
-        mGalleryView.getDefaultDecoration().setHorizontalInsets(
+        mCoverFlow.setAdapter(adapter);
+        mCoverFlow.setMinimumScale(0.7f);
+        mCoverFlow.setMinimumAlpha(0.8f);
+        mCoverFlow.setMaxZ(50.0f);
+        mCoverFlow.getDefaultDecoration().setHorizontalInsets(
                 getResources().getDimensionPixelSize(R.dimen.space_between_items));
         return view;
     }
@@ -67,15 +67,15 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
     @Override
     public void onPause() {
         super.onPause();
-        mGalleryView.setOnItemClickListener(null);
-        mGalleryView.setOnCenteredPositionChangedListener(null);
+        mCoverFlow.setOnItemClickListener(null);
+        mCoverFlow.setOnCenteredPositionChangedListener(null);
     }
 
     @Override
     public void onResume() {
         super.onResume();
-        mGalleryView.setOnItemClickListener(this);
-        mGalleryView.setOnCenteredPositionChangedListener(this);
+        mCoverFlow.setOnItemClickListener(this);
+        mCoverFlow.setOnCenteredPositionChangedListener(this);
     }
 
     private void openDetailsForCard(final int imageId, final String title) {
@@ -147,14 +147,18 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
                 public void onFirstButtonClick(int position) {
                     Log.d(TAG, "First button clicked for position: " + position);
                     if (position > 0)
-                        mGalleryView.smoothScrollToPosition(position - 1);
+                        mCoverFlow.smoothScrollToPosition(position - 1);
+                    else
+                        mCoverFlow.smoothScrollToPosition(mDataSet.length - 1);
                 }
 
                 @Override
                 public void onSecondButtonClick(int position) {
                     Log.d(TAG, "Second button clicked for position: " + position);
                     if (position < mDataSet.length - 1)
-                        mGalleryView.smoothScrollToPosition(position + 1);
+                        mCoverFlow.smoothScrollToPosition(position + 1);
+                    else
+                        mCoverFlow.smoothScrollToPosition(0);
                 }
             });
             return holder;
@@ -169,7 +173,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
             holder.titleText.setText(mDataSet[position]);
             holder.button1.setText(getText(R.string.description_prev));
             holder.button2.setText(getText(R.string.description_next));
-            Glide.with(GalleryFragment.this)
+            Glide.with(CoverFlowFragment.this)
                     .load(images[position % 5])
                     .fitCenter()
                     .into(holder.image);
@@ -184,7 +188,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
         // Provide a reference to the views for each data item
         // Complex data items may need more than one view per item, and
         // you provide access to all the views for a data item in a view holder
-        public class ViewHolder extends GalleryViewHolder implements View.OnClickListener {
+        public class ViewHolder extends CoverFlowViewHolder implements View.OnClickListener {
             public TextView titleText;
             public Button button1;
             public Button button2;
@@ -195,7 +199,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
             private int mPosition;
 
             public ViewHolder(View v, IViewHolderListener listener) {
-                super(v, mGalleryView);
+                super(v, mCoverFlow);
                 cardView = (CardView) v.findViewById(R.id.card_view);
                 titleText = (TextView) v.findViewById(R.id.info_text);
                 button1 = (Button) v.findViewById(R.id.card_button_1);
