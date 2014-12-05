@@ -5,4 +5,7 @@
     <dimen name="info_image_width">300dp</dimen>
     <dimen name="info_image_height">180dp</dimen>
     <dimen name="all_bar_height">60dp</dimen>
+    <dimen name="cover_flow_item_width">300dp</dimen>
+    <dimen name="cover_flow_item_height">200dp</dimen>
+    <dimen name="cover_flow_height">220dp</dimen>
 </resources>

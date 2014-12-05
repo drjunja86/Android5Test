@@ -6,4 +6,7 @@
     <dimen name="info_image_height">300dp</dimen>
     <dimen name="tool_bar_height">62dp</dimen>
     <dimen name="all_bar_height">80dp</dimen>
+    <dimen name="cover_flow_item_width">300dp</dimen>
+    <dimen name="cover_flow_item_height">300dp</dimen>
+    <dimen name="cover_flow_height">320dp</dimen>
 </resources>

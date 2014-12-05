@@ -67,7 +67,7 @@ public class RecycleViewFragment extends Fragment {
             layoutManager = new GridLayoutManager(getActivity(), 1, GridLayoutManager.HORIZONTAL, false);
         else layoutManager = new LinearLayoutManager(getActivity());
         GridDividerDecoration dd = new GridDividerDecoration(getActivity(),
-                getResources().getDimensionPixelSize(R.dimen.space_between_items));
+                getResources().getDimensionPixelSize(R.dimen.space_between_items_rv));
         mRecyclerView.addItemDecoration(dd);
 //        layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.HORIZONTAL);
 //        layoutManager.setGapStrategy(StaggeredGridLayoutManager.GAP_HANDLING_MOVE_ITEMS_BETWEEN_SPANS);

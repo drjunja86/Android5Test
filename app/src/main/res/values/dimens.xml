@@ -13,4 +13,8 @@
     <dimen name="card_margin">10dp</dimen>
     <dimen name="space_between_items">-10dp</dimen>
     <dimen name="card_max_elevation">6dp</dimen>
+    <dimen name="space_between_items_rv">10dp</dimen>
+    <dimen name="cover_flow_item_width">300dp</dimen>
+    <dimen name="cover_flow_item_height">300dp</dimen>
+    <dimen name="cover_flow_height">320dp</dimen>
 </resources>
