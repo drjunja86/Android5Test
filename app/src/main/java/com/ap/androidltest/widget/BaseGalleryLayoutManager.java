@@ -30,9 +30,11 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
     protected int mDecoratedChildHeight;
     /* Metrics for the visible window of our data */
     protected int mVisibleColumnCount;
+    protected boolean mShowItemsInLoop;
     private float mMinScale = 0.8f;
     private float mMinAlpha = 1.0f;
     private float mMaxZ = 0.0f;
+    private int mScaleStartDivider = 4;
 
     public abstract int getOffsetToItem(int position);
 
@@ -133,7 +135,9 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
                 return positionOfIndex(i);
             }
         }
-        return -1;
+
+        if (mPendingCenteredPosition != NOT_SET) return mPendingCenteredPosition;
+        return 0;
     }
 
     public void setMinimumScale(float minScale) {
@@ -156,6 +160,12 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
         scaleAllItems();
     }
 
+    public void setScaleStartDivider(int scaleStartDivider) {
+        if (scaleStartDivider < 1) scaleStartDivider = 1;
+        mScaleStartDivider = scaleStartDivider;
+        scaleAllItems();
+    }
+
     protected void scaleAllItems() {
         for (int i = 0; i < getVisibleChildCount(); i++) {
             View child = getChildAt(i);
@@ -164,7 +174,7 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
             int right = getDecoratedRight(child);
             float center = (float) (left + (right - left) / 2);
             float halfScreen = (float) getWidth() / 2;
-            float distanceFromCenter = Math.abs(halfScreen - center) / 4; // divided by 2 to start resizing earlier
+            float distanceFromCenter = Math.abs(halfScreen - center) / mScaleStartDivider; // divided to start resizing earlier
             float scale = 1 - distanceFromCenter / halfScreen;
             if (scale < 0) scale = 0;
             float alpha = scale;
@@ -190,9 +200,7 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
      * @return position
      */
     protected int positionOfIndex(int childIndex) {
-        int row = childIndex / mVisibleColumnCount;
-        int column = childIndex % mVisibleColumnCount;
-        return getProperPosition(mFirstVisiblePosition + (row * getTotalColumnCount()) + column);
+        return getProperPosition(mFirstVisiblePosition + childIndex % mVisibleColumnCount);
     }
 
     protected int getVisibleChildCount() {
@@ -211,6 +219,18 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
         return (getHorizontalSpace() - mDecoratedChildWidth) / 2;
     }
 
+    public boolean isShowItemsInLoop() {
+        return mShowItemsInLoop;
+    }
+
+    public void setShowItemsInLoop(boolean show) {
+        mPendingCenteredPosition = getCurrentCenteredPosition();
+        mShowItemsInLoop = show;
+        //Completely scrap the existing layout
+        removeAllViews();
+        requestLayout();
+    }
+
     protected static class SavedState implements Parcelable {
         public static final Creator<SavedState> CREATOR
                 = new Creator<SavedState>() {
@@ -225,7 +245,7 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
             }
         };
         protected static final SavedState EMPTY_STATE = new SavedState();
-        private int centerItemPosition;
+        public int centerItemPosition;
 
         private SavedState() {
         }

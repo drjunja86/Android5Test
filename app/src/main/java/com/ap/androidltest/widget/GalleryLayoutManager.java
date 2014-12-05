@@ -30,6 +30,7 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
      */
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
+
         //We have nothing to show for an empty data set but clear any existing views
         if (getItemCount() == 0) {
             detachAndScrapAttachedViews(recycler);
@@ -50,6 +51,7 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
              */
             mDecoratedChildWidth = getDecoratedMeasuredWidth(scrap);
             mDecoratedChildHeight = getDecoratedMeasuredHeight(scrap);
+
             if (mFirstItemOffset == NOT_SET)
                 mFirstItemOffset = getCenteredItemOffset();
             if (mLastItemOffset == NOT_SET)
@@ -61,7 +63,73 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         //Always update the visible row/column counts
         updateWindowSizing();
 
+        if (isCoverFlow()) onLayoutChildrenCoverFlow(recycler, state);
+        else onLayoutChildrenGallery(recycler, state);
 
+        scaleAllItems();
+    }
+
+    /*
+     * This method describes how far RecyclerView thinks the contents should scroll horizontally.
+     * You are responsible for verifying edge boundaries, and determining if this scroll
+     * event somehow requires that new views be added or old views get recycled.
+     */
+    @Override
+    public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
+        if (getChildCount() == 0) {
+            return 0;
+        }
+
+        if (isCoverFlow()) return scrollHorizontallyCoverFlowBy(dx, recycler, state);
+        return scrollHorizontallyGalleryBy(dx, recycler, state);
+    }
+
+    /**
+     * Calculates offset to the item with position
+     *
+     * @param position position of the desired item
+     * @return offset in pixels
+     */
+    public int getOffsetToItem(int position) {
+        if (isCoverFlow()) return getOffsetToItemCoverFlow(position);
+        return getOffsetToItemGallery(position);
+    }
+
+    @Override
+    protected int getProperPosition(int position) {
+        if (isCoverFlow()) return getProperPositionCoverFlow(position);
+        return getProperPositionGallery(position);
+    }
+
+    private void onLayoutChildrenCoverFlow(RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
+        int childLeft;
+        int childTop = 0;
+
+        int centeredChild = Math.round((float) getVisibleChildCount() / 2.0f) - 1;
+        if (mPendingCenteredPosition != NOT_SET) {
+            //situation when there are should be items which go out of screen before the centered item
+            mFirstVisiblePosition = mPendingCenteredPosition - centeredChild;
+            childLeft = getCenteredItemOffset() - centeredChild * mDecoratedChildWidth;
+            mPendingCenteredPosition = NOT_SET;
+        } else if (getChildCount() == 0) {
+            mFirstVisiblePosition = getProperPosition(mFirstVisiblePosition - centeredChild);
+            childLeft = getCenteredItemOffset() - centeredChild * mDecoratedChildWidth;
+        } else { //Adapter data set changes
+            /*
+             * Keep the existing initial position, and save off
+             * the current scrolled offset.
+             */
+            childLeft = getDecoratedLeft(getChildAt(0)) - getPaddingLeft();
+        }
+
+        //Clear all attached views into the recycle bin
+        detachAndScrapAttachedViews(recycler);
+
+        //Fill the grid for the initial layout of views
+        fillGridCoverFlow(DIRECTION_NONE, childLeft, childTop, recycler);
+    }
+
+    private void onLayoutChildrenGallery(RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
         int childLeft;
         int childTop = 0;
 
@@ -99,15 +167,10 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         detachAndScrapAttachedViews(recycler);
 
         //Fill the grid for the initial layout of views
-        fillGrid(DIRECTION_NONE, childLeft, childTop, recycler);
-        scaleAllItems();
+        fillGridGallery(DIRECTION_NONE, childLeft, childTop, recycler);
     }
 
-    private void fillGrid(int direction, RecyclerView.Recycler recycler) {
-        fillGrid(direction, mFirstItemOffset, 0, recycler);
-    }
-
-    private void fillGrid(int direction, int emptyLeft, int emptyTop, RecyclerView.Recycler recycler) {
+    private void fillGridGallery(int direction, int emptyLeft, int emptyTop, RecyclerView.Recycler recycler) {
         if (mFirstVisiblePosition < 0) mFirstVisiblePosition = 0;
         if (mFirstVisiblePosition >= getItemCount()) mFirstVisiblePosition = (getItemCount() - 1);
 
@@ -224,17 +287,117 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         }
     }
 
-    /*
-     * This method describes how far RecyclerView thinks the contents should scroll horizontally.
-     * You are responsible for verifying edge boundaries, and determining if this scroll
-     * event somehow requires that new views be added or old views get recycled.
-     */
-    @Override
-    public int scrollHorizontallyBy(int dx, RecyclerView.Recycler recycler, RecyclerView.State state) {
-        if (getChildCount() == 0) {
-            return 0;
+    private void fillGridCoverFlow(int direction, int emptyLeft, int emptyTop, RecyclerView.Recycler recycler) {
+        mFirstVisiblePosition = getProperPosition(mFirstVisiblePosition);
+        /*
+         * First, we will detach all existing views from the layout.
+         * detachView() is a lightweight operation that we can use to
+         * quickly reorder views without a full add/remove.
+         */
+        SparseArray<View> viewCache = new SparseArray<>(getChildCount());
+        int startLeftOffset = getPaddingLeft() + emptyLeft;
+        int startTopOffset = getPaddingTop() + emptyTop;
+        if (getChildCount() != 0) {
+            final View topView = getChildAt(0);
+            startLeftOffset = getDecoratedLeft(topView);
+            startTopOffset = getDecoratedTop(topView);
+            switch (direction) {
+                case DIRECTION_START:
+                    startLeftOffset -= mDecoratedChildWidth;
+                    break;
+                case DIRECTION_END:
+                    startLeftOffset += mDecoratedChildWidth;
+                    break;
+            }
+
+            //Cache all views by their existing position, before updating counts
+            for (int i = 0; i < getChildCount(); i++) {
+                int position = positionOfIndex(i);
+                final View child = getChildAt(i);
+                viewCache.put(position, child);
+            }
+
+            //Temporarily detach all views.
+            // Views we still need will be added back at the proper index.
+            for (int i = 0; i < viewCache.size(); i++) {
+                detachView(viewCache.valueAt(i));
+            }
         }
 
+        /*
+         * Next, we advance the visible position based on the fill direction.
+         * DIRECTION_NONE doesn't advance the position in any direction.
+         */
+        switch (direction) {
+            case DIRECTION_START:
+                mFirstVisiblePosition--;
+                break;
+            case DIRECTION_END:
+                mFirstVisiblePosition++;
+                break;
+        }
+
+        mFirstVisiblePosition = getProperPosition(mFirstVisiblePosition);
+
+        /*
+         * Next, we supply the grid of items that are deemed visible.
+         * If these items were previously there, they will simple be
+         * re-attached. New views that must be created are obtained
+         * from the Recycler and added.
+         */
+        int leftOffset = startLeftOffset;
+        int topOffset = startTopOffset;
+
+        for (int i = 0; i < getVisibleChildCount(); i++) {
+            int nextPosition = positionOfIndex(i);
+
+            //Layout this position
+            View view = viewCache.get(nextPosition);
+            if (view == null) {
+                /*
+                 * The Recycler will give us either a newly constructed view,
+                 * or a recycled view it has on-hand. In either case, the
+                 * view will already be fully bound to the data by the
+                 * adapter for us.
+                 */
+                view = recycler.getViewForPosition(nextPosition);
+                addView(view);
+
+                /*
+                 * It is prudent to measure/layout each new view we
+                 * receive from the Recycler. We don't have to do
+                 * this for views we are just re-arranging.
+                 */
+                measureChildWithMargins(view, 0, 0);
+                layoutDecorated(view, leftOffset, topOffset,
+                        leftOffset + mDecoratedChildWidth,
+                        topOffset + mDecoratedChildHeight);
+            } else {
+                //Re-attach the cached view at its new index
+                attachView(view);
+                viewCache.remove(nextPosition);
+            }
+
+            if (i % mVisibleColumnCount == (mVisibleColumnCount - 1)) {
+                leftOffset = startLeftOffset;
+                topOffset += mDecoratedChildHeight;
+                //If we wrapped without setting the column count, we've reached it
+            } else {
+                leftOffset += mDecoratedChildWidth;
+            }
+        }
+
+        /*
+         * Finally, we ask the Recycler to scrap and store any views
+         * that we did not re-attach. These are views that are not currently
+         * necessary because they are no longer visible.
+         */
+        for (int i = 0; i < viewCache.size(); i++) {
+            recycler.recycleView(viewCache.valueAt(i));
+        }
+    }
+
+    private int scrollHorizontallyGalleryBy(int dx, RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
         //Take leftmost measurements from the top-left child
         final View topView = getChildAt(0);
         //Take rightmost measurements from the top-right child
@@ -244,9 +407,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
             offsetIndex++;
             bottomView = getChildAt(mVisibleColumnCount - offsetIndex);
         }
-//        Log.d(TAG, "dx = " + dx);
-//        Log.d(TAG, "getDecoratedLeft(topView) = " + getDecoratedLeft(topView));
-//        Log.d(TAG, "getDecoratedRight(bottomView) = " + getDecoratedRight(bottomView));
 
         if (getFirstVisibleColumn() == 0) mFirstItemOffset = getDecoratedLeft(topView);
         else mFirstItemOffset = 0;
@@ -262,10 +422,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         else if (mLastItemOffset > getCenteredItemOffset() - getPaddingRight())
             mLastItemOffset = getCenteredItemOffset() - getPaddingRight();
 
-
-//        Log.d(TAG, "First item offset: " + mFirstItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
-//        Log.d(TAG, "Last item offset: " + mLastItemOffset + "   getCenteredItemOffset() = " + getCenteredItemOffset());
-
         int delta;
         boolean leftBoundReached = getFirstVisibleColumn() == 0 &&
                 mFirstItemOffset >= getCenteredItemOffset();
@@ -273,7 +429,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
                 mLastItemOffset >= getCenteredItemOffset() - getPaddingRight();
 
         if (dx > 0) { // Contents are scrolling left
-//            Log.d(TAG, "Contents are scrolling left, rightBoundReached = " + rightBoundReached);
             //Check right bound
             if (rightBoundReached) {
                 //If we've reached the last column, enforce limits
@@ -284,7 +439,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
                 delta = -dx;
             }
         } else { // Contents are scrolling right
-//            Log.d(TAG, "Contents are scrolling right, leftBoundReached = " + leftBoundReached);
             //Check left bound
             if (leftBoundReached) {
                 int leftOffset = -getDecoratedLeft(topView) + getPaddingLeft() + getCenteredItemOffset();
@@ -293,21 +447,19 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
                 delta = -dx;
             }
         }
-//        Log.d(TAG, "Delta = " + delta);
-
         offsetChildrenHorizontal(delta);
 
         if (dx > 0) {
             if (getDecoratedRight(topView) < 0 && !rightBoundReached) {
-                fillGrid(DIRECTION_END, recycler);
+                fillGridGallery(DIRECTION_END, mFirstItemOffset, 0, recycler);
             } else if (!rightBoundReached) {
-                fillGrid(DIRECTION_NONE, recycler);
+                fillGridGallery(DIRECTION_NONE, mFirstItemOffset, 0, recycler);
             }
         } else {
             if (getDecoratedLeft(topView) > 0 && !leftBoundReached) {
-                fillGrid(DIRECTION_START, recycler);
+                fillGridGallery(DIRECTION_START, mFirstItemOffset, 0, recycler);
             } else if (!leftBoundReached) {
-                fillGrid(DIRECTION_NONE, recycler);
+                fillGridGallery(DIRECTION_NONE, mFirstItemOffset, 0, recycler);
             }
         }
 
@@ -322,7 +474,48 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         return -delta;
     }
 
-    public int getOffsetToItem(int position) {
+    private int scrollHorizontallyCoverFlowBy(int dx, RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
+        //Take leftmost measurements from the top-left child
+        final View topView = getChildAt(0);
+
+        offsetChildrenHorizontal(-dx);
+
+        if (dx > 0) {
+            if (getDecoratedRight(topView) < 0) {
+                fillGridCoverFlow(DIRECTION_END, 0, 0, recycler);
+            }
+        } else {
+            if (getDecoratedLeft(topView) > 0) {
+                fillGridCoverFlow(DIRECTION_START, 0, 0, recycler);
+            }
+        }
+
+        scaleAllItems();
+
+        /*
+         * Return value determines if a boundary has been reached
+         * (for edge effects and flings). If returned value does not
+         * match original delta (passed in), RecyclerView will draw
+         * an edge effect.
+         */
+        return dx;
+    }
+
+    private int getOffsetToItemCoverFlow(int position) {
+        if (position < 0 || position >= getTotalColumnCount()) return 0;
+        View zeroChild = getChildAt(0);
+        if (zeroChild == null) return 0;
+        int left = getDecoratedLeft(zeroChild) - getPaddingLeft();
+        int zeroChildPosition = positionOfIndex(0);
+        int columnsOffset = position - zeroChildPosition;
+        if (Math.abs(columnsOffset) > getItemCount() / 2)
+            columnsOffset = getItemCount() + columnsOffset;
+        int columnsOffsetWidth = columnsOffset * mDecoratedChildWidth;
+        int offset = left - getCenteredItemOffset() + columnsOffsetWidth;
+        return (offset >= -1 && offset <= 1) ? 0 : offset;
+    }
+
+    private int getOffsetToItemGallery(int position) {
         if (position < 0 || position >= getTotalColumnCount()) return 0;
         View zeroChild = getChildAt(0);
         if (zeroChild == null) return 0;
@@ -333,20 +526,14 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         return (offset >= -1 && offset <= 1) ? 0 : offset;
     }
 
-    @Override
-    protected int getProperPosition(int position) {
+    private int getProperPositionGallery(int position) {
         return position;
     }
 
-    /*
-     * Mapping between child view indices and adapter data
-     * positions helps fill the proper views during scrolling.
-     */
-    protected int positionOfIndex(int childIndex) {
-        int row = childIndex / mVisibleColumnCount;
-        int column = childIndex % mVisibleColumnCount;
-
-        return mFirstVisiblePosition + (row * getTotalColumnCount()) + column;
+    private int getProperPositionCoverFlow(int position) {
+        if (position < 0) position = getItemCount() + (position % getItemCount());
+        else if (position >= getItemCount()) position = position % getItemCount();
+        return position;
     }
 
     private int getFirstVisibleColumn() {
@@ -355,5 +542,9 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
 
     private int getLastVisibleColumn() {
         return getFirstVisibleColumn() + mVisibleColumnCount;
+    }
+
+    private boolean isCoverFlow() {
+        return mShowItemsInLoop && getVisibleChildCount() < getItemCount();
     }
 }

@@ -2,6 +2,7 @@ package com.ap.androidltest.widget;
 
 import android.content.Context;
 import android.content.res.TypedArray;
+import android.os.Parcelable;
 import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.util.Log;
@@ -39,6 +40,12 @@ public class GalleryRecyclerView extends RecyclerView {
         init(context, attrs);
     }
 
+    @Override
+    protected void onRestoreInstanceState(Parcelable state) {
+        super.onRestoreInstanceState(state);
+        if (mLayoutManager != null) mCenteredPosition = mLayoutManager.getCurrentCenteredPosition();
+    }
+
     /**
      * Initialize all required components
      */
@@ -46,7 +53,7 @@ public class GalleryRecyclerView extends RecyclerView {
         // use a linear layout manager
         mDefaultDecoration = new InsetDecoration(0, 30);
         addItemDecoration(mDefaultDecoration);
-
+        setLayoutManager(new GalleryLayoutManager());
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GalleryRecyclerView, 0, 0);
         try {
             float minScale = ta.getFloat(R.styleable.GalleryRecyclerView_minScale, -1);
@@ -59,7 +66,6 @@ public class GalleryRecyclerView extends RecyclerView {
         } finally {
             ta.recycle();
         }
-        setLayoutManager(mLayoutManager);
     }
 
     /**
@@ -103,6 +109,15 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     public void setMaxZ(float maxZ) {
         mLayoutManager.setMaxZ(maxZ);
+    }
+
+    /**
+     * This parameter shows starting from which part of the half screen items will start scaling.
+     * Value cannot be smaller than 1.
+     * @param scaleStartDivider     scale start divider value
+     */
+    public void setScaleStartDivider(int scaleStartDivider) {
+        mLayoutManager.setScaleStartDivider(scaleStartDivider);
     }
 
     /**
@@ -248,7 +263,7 @@ public class GalleryRecyclerView extends RecyclerView {
      * @return boolean
      */
     public boolean isShowItemsInLoop() {
-        return mLayoutManager instanceof CoverFlowLayoutManager;
+        return mLayoutManager != null && mLayoutManager.isShowItemsInLoop();
     }
 
     /**
@@ -257,17 +272,7 @@ public class GalleryRecyclerView extends RecyclerView {
      * @param show true if show item and false if not
      */
     public void setShowItemsInLoop(boolean show) {
-        if (mLayoutManager != null) {
-            if (show && mLayoutManager instanceof GalleryLayoutManager)
-                mLayoutManager = new CoverFlowLayoutManager();
-            else if (!show && mLayoutManager instanceof CoverFlowLayoutManager)
-                mLayoutManager = new GalleryLayoutManager();
-        } else {
-            if (show)
-                mLayoutManager = new CoverFlowLayoutManager();
-            else
-                mLayoutManager = new GalleryLayoutManager();
-        }
+        if (mLayoutManager != null) mLayoutManager.setShowItemsInLoop(show);
     }
 
     /**

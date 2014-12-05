@@ -56,6 +56,7 @@ public class CoverFlowFragment extends Fragment implements GalleryRecyclerView.O
         mCoverFlow = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
         mCoverFlowCount = (TextView) view.findViewById(R.id.coverflow_count);
         // specify an adapter (see also next example)
+        mCoverFlow.setShowItemsInLoop(true);
         mCoverFlow.setAdapter(new MyAdapter());
         mCoverFlow.setMinimumScale(0.7f);
         mCoverFlow.setMinimumAlpha(0.8f);
@@ -76,7 +77,7 @@ public class CoverFlowFragment extends Fragment implements GalleryRecyclerView.O
         super.onResume();
         mCoverFlow.setOnItemClickListener(this);
         mCoverFlow.setOnCenteredPositionChangedListener(this);
-        onCenteredPositionChanged(0);
+        onCenteredPositionChanged(mCoverFlow.getCenteredPosition());
     }
 
     private void openDetailsForCard(final int imageId, final String title) {
@@ -122,9 +123,9 @@ public class CoverFlowFragment extends Fragment implements GalleryRecyclerView.O
 
     @Override
     public void onCenteredPositionChanged(int newCenteredPosition) {
-        Log.d(TAG, "Listener will be notified about centered position change ["
-                + newCenteredPosition + "]");
-        mCoverFlowCount.setText(String.format("%d / %d", newCenteredPosition+1, mCoverFlow.getAdapter().getItemCount()));
+//        Log.d(TAG, "Listener will be notified about centered position change [" + newCenteredPosition + "]");
+        mCoverFlowCount.setText(String.format("%d / %d", newCenteredPosition + 1,
+                mCoverFlow.getAdapter().getItemCount()));
     }
 
     public static interface IViewHolderListener {
