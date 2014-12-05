@@ -5,7 +5,7 @@
     android:layout_height="match_parent"
     tools:context="com.ap.androidltest.fragment.CoverFlowFragment">
 
-    <com.ap.androidltest.widget.CoverFlowRecyclerView
+    <com.ap.androidltest.widget.GalleryRecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -13,6 +13,7 @@
         android:paddingTop="@dimen/tool_bar_height"
         custom:maxZ="50"
         custom:minAlpha="0.8"
-        custom:minScale="0.7" />
+        custom:minScale="0.7"
+        custom:showItemsInLoop="true" />
 
 </FrameLayout>

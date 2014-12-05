@@ -1,9 +1,5 @@
 package com.ap.androidltest.widget;
 
-import android.os.Build;
-import android.os.Parcel;
-import android.os.Parcelable;
-import android.support.v4.view.ViewCompat;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.util.SparseArray;
@@ -13,41 +9,14 @@ import android.view.View;
  * Created by AP on 19/11/14.
  * Layout manager for RecycleView to simulate
  */
-public class GalleryLayoutManager extends RecyclerView.LayoutManager {
+public class GalleryLayoutManager extends BaseGalleryLayoutManager {
 
     private static final String TAG = GalleryLayoutManager.class.getSimpleName();
-
-    /* Fill Direction Constants */
-    private static final int DIRECTION_NONE = -1;
-    private static final int DIRECTION_START = 0;
-    private static final int DIRECTION_END = 1;
-    private static final int NOT_SET = Integer.MIN_VALUE;
     /* Flag to force current scroll offsets to be ignored on re-layout */
     private int mFirstItemOffset = NOT_SET, mLastItemOffset = NOT_SET;
-    private int mPendingCenteredPosition = NOT_SET;
-    /* First (top-left) position visible at any point */
-    private int mFirstVisiblePosition = 0;
-    /* Consistent size applied to all child views */
-    private int mDecoratedChildWidth;
-    private int mDecoratedChildHeight;
-    /* Metrics for the visible window of our data */
-    private int mVisibleColumnCount;
-    private float mMinScale = 0.8f;
-    private float mMinAlpha = 1.0f;
-    private float mMaxZ = 0.0f;
-    private boolean mShowItemsInLoop;
 
-    @Override
-    public Parcelable onSaveInstanceState() {
-        final SavedState state = new SavedState(SavedState.EMPTY_STATE);
-        state.centerItemPosition = getCurrentCenteredPosition();
-        return state;
-    }
-
-    @Override
-    public void onRestoreInstanceState(Parcelable state) {
-        SavedState pendingState = (SavedState) state;
-        mPendingCenteredPosition = pendingState.centerItemPosition;
+    public GalleryLayoutManager() {
+        Log.d(TAG, "Initializing GalleryLayoutManager");
     }
 
     /*
@@ -132,29 +101,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         //Fill the grid for the initial layout of views
         fillGrid(DIRECTION_NONE, childLeft, childTop, recycler);
         scaleAllItems();
-    }
-
-    @Override
-    public void onAdapterChanged(RecyclerView.Adapter oldAdapter, RecyclerView.Adapter newAdapter) {
-        //Completely scrap the existing layout
-        removeAllViews();
-    }
-
-    /*
-     * Rather than continuously checking how many views we can fit
-     * based on scroll offsets, we simplify the math by computing the
-     * visible grid as what will initially fit on screen, plus one.
-     */
-    private void updateWindowSizing() {
-        mVisibleColumnCount = (getHorizontalSpace() / mDecoratedChildWidth) + 1;
-        if (getHorizontalSpace() % mDecoratedChildWidth > 0) {
-            mVisibleColumnCount++;
-        }
-
-        //Allow minimum value for small data sets
-        if (mVisibleColumnCount > getTotalColumnCount()) {
-            mVisibleColumnCount = getTotalColumnCount();
-        }
     }
 
     private void fillGrid(int direction, RecyclerView.Recycler recycler) {
@@ -278,21 +224,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         }
     }
 
-    @Override
-    public void smoothScrollToPosition(RecyclerView recyclerView, RecyclerView.State state, final int position) {
-        Log.e(TAG, "Method smoothScrollToPosition is not supported. Use smoothScrollBy");
-    }
-
-    /*
-     * Use this method to tell the RecyclerView if scrolling is even possible
-     * in the horizontal direction.
-     */
-    @Override
-    public boolean canScrollHorizontally() {
-        //We do allow scrolling
-        return true;
-    }
-
     /*
      * This method describes how far RecyclerView thinks the contents should scroll horizontally.
      * You are responsible for verifying edge boundaries, and determining if this scroll
@@ -391,53 +322,6 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         return -delta;
     }
 
-    /*
-     * Use this method to tell the RecyclerView if scrolling is even possible
-     * in the vertical direction.
-     */
-    @Override
-    public boolean canScrollVertically() {
-        //We do allow scrolling
-        return false;
-    }
-
-    /*
-     * We must override this method to provide the default layout
-     * parameters that each child view will receive when added.
-     */
-    @Override
-    public RecyclerView.LayoutParams generateDefaultLayoutParams() {
-        return new RecyclerView.LayoutParams(
-                RecyclerView.LayoutParams.WRAP_CONTENT,
-                RecyclerView.LayoutParams.WRAP_CONTENT);
-    }
-
-    /*
-     * This is a helper method used by RecyclerView to determine
-     * if a specific child view can be returned.
-     */
-    @Override
-    public View findViewByPosition(int position) {
-        for (int i = 0; i < getChildCount(); i++) {
-            if (positionOfIndex(i) == position) {
-                return getChildAt(i);
-            }
-        }
-
-        return null;
-    }
-
-    public int getCurrentCenteredPosition() {
-        View child;
-        for (int i = 0; i < getChildCount(); i++) {
-            child = getChildAt(i);
-            if (getDecoratedRight(child) > getHorizontalSpace() / 2) {
-                return positionOfIndex(i);
-            }
-        }
-        return -1;
-    }
-
     public int getOffsetToItem(int position) {
         if (position < 0 || position >= getTotalColumnCount()) return 0;
         View zeroChild = getChildAt(0);
@@ -449,65 +333,16 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
         return (offset >= -1 && offset <= 1) ? 0 : offset;
     }
 
-    private void scaleAllItems() {
-        for (int i = 0; i < getVisibleChildCount(); i++) {
-            View child = getChildAt(i);
-            if (child == null) continue;
-            int left = getDecoratedLeft(child);
-            int right = getDecoratedRight(child);
-            float center = (float) (left + (right - left) / 2);
-            float halfScreen = (float) getWidth() / 2;
-            float distanceFromCenter = Math.abs(halfScreen - center) / 2; // divided by 2 to start resizing earlier
-            float scale = 1 - distanceFromCenter / halfScreen;
-            if (scale < 0) scale = 0;
-            float alpha = scale;
-            float translationZScale = scale;
-            if (scale < mMinScale) scale = mMinScale;
-            if (alpha < mMinAlpha) alpha = mMinAlpha;
-            child.setScaleX(scale);
-            child.setScaleY(scale);
-            child.setAlpha(alpha);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                child.setTranslationZ(mMaxZ * translationZScale);
-            } else {
-                ViewCompat.setTranslationZ(child, mMaxZ * translationZScale);
-            }
-        }
-    }
-
-    public void setMinimumScale(float minScale) {
-        if (minScale < 0) minScale = 0;
-        else if (minScale > 1.0f) minScale = 1.0f;
-        mMinScale = minScale;
-        scaleAllItems();
-    }
-
-    public void setMinimumAlpha(float minAlpha) {
-        if (minAlpha < 0) minAlpha = 0;
-        else if (minAlpha > 1.0f) minAlpha = 1.0f;
-        mMinAlpha = minAlpha;
-        scaleAllItems();
-    }
-
-    public void setMaxZ(float maxZ) {
-        if (maxZ < 0) maxZ = 0;
-        mMaxZ = maxZ;
-        scaleAllItems();
-    }
-
-    public boolean isShowItemsInLoop() {
-        return mShowItemsInLoop;
-    }
-
-    public void setShowItemsInLoop(boolean showItemsInLoop) {
-        mShowItemsInLoop = showItemsInLoop;
+    @Override
+    protected int getProperPosition(int position) {
+        return position;
     }
 
     /*
      * Mapping between child view indices and adapter data
      * positions helps fill the proper views during scrolling.
      */
-    private int positionOfIndex(int childIndex) {
+    protected int positionOfIndex(int childIndex) {
         int row = childIndex / mVisibleColumnCount;
         int column = childIndex % mVisibleColumnCount;
 
@@ -520,62 +355,5 @@ public class GalleryLayoutManager extends RecyclerView.LayoutManager {
 
     private int getLastVisibleColumn() {
         return getFirstVisibleColumn() + mVisibleColumnCount;
-    }
-
-    private int getVisibleChildCount() {
-        return mVisibleColumnCount;
-    }
-
-    private int getTotalColumnCount() {
-        return getItemCount();
-    }
-
-    private int getHorizontalSpace() {
-        return getWidth() - getPaddingRight() - getPaddingLeft();
-    }
-
-    private int getCenteredItemOffset() {
-        return (getHorizontalSpace() - mDecoratedChildWidth) / 2;
-    }
-
-
-    protected static class SavedState implements Parcelable {
-        public static final Parcelable.Creator<SavedState> CREATOR
-                = new Parcelable.Creator<SavedState>() {
-            @Override
-            public SavedState createFromParcel(Parcel in) {
-                return new SavedState(in);
-            }
-
-            @Override
-            public SavedState[] newArray(int size) {
-                return new SavedState[size];
-            }
-        };
-        protected static final SavedState EMPTY_STATE = new SavedState();
-        private int centerItemPosition;
-
-        private SavedState() {
-        }
-
-        protected SavedState(Parcelable superState) {
-            if (superState == null) {
-                throw new IllegalArgumentException("superState must not be null");
-            }
-        }
-
-        protected SavedState(Parcel in) {
-            centerItemPosition = in.readInt();
-        }
-
-        @Override
-        public int describeContents() {
-            return 0;
-        }
-
-        @Override
-        public void writeToParcel(Parcel out, int flags) {
-            out.writeInt(centerItemPosition);
-        }
     }
 }

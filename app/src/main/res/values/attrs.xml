@@ -4,5 +4,6 @@
         <attr name="minScale" format="float" />
         <attr name="minAlpha" format="float" />
         <attr name="maxZ" format="float" />
+        <attr name="showItemsInLoop" format="boolean" />
     </declare-styleable>
 </resources>
