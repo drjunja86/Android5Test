@@ -164,7 +164,7 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
             int right = getDecoratedRight(child);
             float center = (float) (left + (right - left) / 2);
             float halfScreen = (float) getWidth() / 2;
-            float distanceFromCenter = Math.abs(halfScreen - center) / 2; // divided by 2 to start resizing earlier
+            float distanceFromCenter = Math.abs(halfScreen - center) / 4; // divided by 2 to start resizing earlier
             float scale = 1 - distanceFromCenter / halfScreen;
             if (scale < 0) scale = 0;
             float alpha = scale;
