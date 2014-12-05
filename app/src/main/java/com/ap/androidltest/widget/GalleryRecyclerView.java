@@ -20,7 +20,7 @@ public class GalleryRecyclerView extends RecyclerView {
 
     private static final String TAG = GalleryRecyclerView.class.getSimpleName();
     private InsetDecoration mDefaultDecoration;
-    private GalleryLayoutManager mLayoutManager;
+    private BaseGalleryLayoutManager mLayoutManager;
     private RecyclerView.OnScrollListener mScrollListener;
     private OnItemClickListener mItemClickListener;
     private int mCenteredPosition = 0;
@@ -44,8 +44,6 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     private void init(Context context, AttributeSet attrs) {
         // use a linear layout manager
-        mLayoutManager = new GalleryLayoutManager();
-        setLayoutManager(mLayoutManager);
         mDefaultDecoration = new InsetDecoration(0, 30);
         addItemDecoration(mDefaultDecoration);
 
@@ -54,12 +52,14 @@ public class GalleryRecyclerView extends RecyclerView {
             float minScale = ta.getFloat(R.styleable.GalleryRecyclerView_minScale, -1);
             float minAlpha = ta.getFloat(R.styleable.GalleryRecyclerView_minAlpha, -1);
             float maxZ = ta.getFloat(R.styleable.GalleryRecyclerView_maxZ, -1);
+            setShowItemsInLoop(ta.getBoolean(R.styleable.GalleryRecyclerView_showItemsInLoop, false));
             if (minScale != -1) setMinimumScale(minScale);
             if (minAlpha != -1) setMinimumAlpha(minAlpha);
             if (maxZ != -1) setMaxZ(maxZ);
         } finally {
             ta.recycle();
         }
+        setLayoutManager(mLayoutManager);
     }
 
     /**
@@ -122,8 +122,8 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     @Override
     public void setLayoutManager(LayoutManager layout) {
-        if (layout instanceof GalleryLayoutManager) {
-            mLayoutManager = (GalleryLayoutManager) layout;
+        if (layout instanceof BaseGalleryLayoutManager) {
+            mLayoutManager = (BaseGalleryLayoutManager) layout;
         } else {
             Log.e(TAG, "You can set only GalleryLayoutManager or class which extends that");
         }
@@ -248,7 +248,7 @@ public class GalleryRecyclerView extends RecyclerView {
      * @return boolean
      */
     public boolean isShowItemsInLoop() {
-        return mLayoutManager.isShowItemsInLoop();
+        return mLayoutManager instanceof CoverFlowLayoutManager;
     }
 
     /**
@@ -257,7 +257,17 @@ public class GalleryRecyclerView extends RecyclerView {
      * @param show true if show item and false if not
      */
     public void setShowItemsInLoop(boolean show) {
-        mLayoutManager.setShowItemsInLoop(show);
+        if (mLayoutManager != null) {
+            if (show && mLayoutManager instanceof GalleryLayoutManager)
+                mLayoutManager = new CoverFlowLayoutManager();
+            else if (!show && mLayoutManager instanceof CoverFlowLayoutManager)
+                mLayoutManager = new GalleryLayoutManager();
+        } else {
+            if (show)
+                mLayoutManager = new CoverFlowLayoutManager();
+            else
+                mLayoutManager = new GalleryLayoutManager();
+        }
     }
 
     /**

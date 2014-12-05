@@ -20,19 +20,19 @@ import android.widget.TextView;
 
 import com.ap.androidltest.R;
 import com.ap.androidltest.activity.DetailsActivity;
-import com.ap.androidltest.widget.CoverFlowRecyclerView;
-import com.ap.androidltest.widget.CoverFlowViewHolder;
+import com.ap.androidltest.widget.GalleryRecyclerView;
+import com.ap.androidltest.widget.GalleryViewHolder;
 import com.bumptech.glide.Glide;
 
 
 /**
  * A simple {@link Fragment} subclass.
  */
-public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView.OnItemClickListener, CoverFlowRecyclerView.OnCenteredPositionChangedListener {
+public class CoverFlowFragment extends Fragment implements GalleryRecyclerView.OnItemClickListener, GalleryRecyclerView.OnCenteredPositionChangedListener {
 
     private static final String TAG = GalleryFragment.class.getSimpleName();
     private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
-    private CoverFlowRecyclerView mCoverFlow;
+    private GalleryRecyclerView mCoverFlow;
     private ImageView mPressedImageView;
     private TextView mCoverFlowCount;
     private String[] mDataSet = new String[]{"String 1", "String 2", "String 3", "String 4",
@@ -53,8 +53,8 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_cover_flow, container, false);
+        mCoverFlow = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
         mCoverFlowCount = (TextView) view.findViewById(R.id.coverflow_count);
-        mCoverFlow = (CoverFlowRecyclerView) view.findViewById(R.id.recycler_view);
         // specify an adapter (see also next example)
         mCoverFlow.setAdapter(new MyAdapter());
         mCoverFlow.setMinimumScale(0.7f);
@@ -190,7 +190,7 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
         // Provide a reference to the views for each data item
         // Complex data items may need more than one view per item, and
         // you provide access to all the views for a data item in a view holder
-        public class ViewHolder extends CoverFlowViewHolder implements View.OnClickListener {
+        public class ViewHolder extends GalleryViewHolder implements View.OnClickListener {
             public TextView titleText;
             public Button button1;
             public Button button2;

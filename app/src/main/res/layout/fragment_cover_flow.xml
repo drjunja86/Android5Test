@@ -11,14 +11,15 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <com.ap.androidltest.widget.CoverFlowRecyclerView
+    <com.ap.androidltest.widget.GalleryRecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
         android:layout_height="350dp"
         android:clipToPadding="false"
         custom:maxZ="5"
         custom:minAlpha="0.8"
-        custom:minScale="0.7" />
+        custom:minScale="0.7"
+        custom:showItemsInLoop="true" />
 
     <TextView
         android:id="@+id/coverflow_count"
