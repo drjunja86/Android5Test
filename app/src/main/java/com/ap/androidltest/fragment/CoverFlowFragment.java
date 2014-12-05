@@ -34,6 +34,7 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
     private final int[] images = new int[]{R.drawable.img1, R.drawable.img2, R.drawable.img3, R.drawable.img4, R.drawable.img5};
     private CoverFlowRecyclerView mCoverFlow;
     private ImageView mPressedImageView;
+    private TextView mCoverFlowCount;
     private String[] mDataSet = new String[]{"String 1", "String 2", "String 3", "String 4",
             "String 5", "String 6", "String 7", "String 8", "String 9", "String 10", "String 11", "String 12"};
 
@@ -52,15 +53,14 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_cover_flow, container, false);
+        mCoverFlowCount = (TextView) view.findViewById(R.id.coverflow_count);
         mCoverFlow = (CoverFlowRecyclerView) view.findViewById(R.id.recycler_view);
         // specify an adapter (see also next example)
-        MyAdapter adapter = new MyAdapter();
-        mCoverFlow.setAdapter(adapter);
+        mCoverFlow.setAdapter(new MyAdapter());
         mCoverFlow.setMinimumScale(0.7f);
         mCoverFlow.setMinimumAlpha(0.8f);
-        mCoverFlow.setMaxZ(50.0f);
-        mCoverFlow.getDefaultDecoration().setHorizontalInsets(
-                getResources().getDimensionPixelSize(R.dimen.space_between_items));
+        mCoverFlow.setMaxZ(5.0f);
+        mCoverFlow.getDefaultDecoration().setHorizontalInsets(getResources().getDimensionPixelSize(R.dimen.space_between_items));
         return view;
     }
 
@@ -76,6 +76,7 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
         super.onResume();
         mCoverFlow.setOnItemClickListener(this);
         mCoverFlow.setOnCenteredPositionChangedListener(this);
+        onCenteredPositionChanged(0);
     }
 
     private void openDetailsForCard(final int imageId, final String title) {
@@ -123,6 +124,7 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
     public void onCenteredPositionChanged(int newCenteredPosition) {
         Log.d(TAG, "Listener will be notified about centered position change ["
                 + newCenteredPosition + "]");
+        mCoverFlowCount.setText(String.format("%d / %d", newCenteredPosition+1, mCoverFlow.getAdapter().getItemCount()));
     }
 
     public static interface IViewHolderListener {
@@ -139,7 +141,7 @@ public class CoverFlowFragment extends Fragment implements CoverFlowRecyclerView
                                                        int viewType) {
             // create a new view
             CardView v = (CardView) LayoutInflater.from(parent.getContext())
-                    .inflate(R.layout.item_recycler_view, parent, false);
+                    .inflate(R.layout.item_coverflow_view, parent, false);
             // set the view's size, margins, paddings and layout parameters
             //noinspection UnnecessaryLocalVariable
             ViewHolder holder = new ViewHolder(v, new IViewHolderListener() {

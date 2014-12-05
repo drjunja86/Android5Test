@@ -48,8 +48,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         View view = inflater.inflate(R.layout.fragment_gallery, container, false);
         mGalleryView = (GalleryRecyclerView) view.findViewById(R.id.recycler_view);
@@ -58,7 +57,7 @@ public class GalleryFragment extends Fragment implements GalleryRecyclerView.OnI
         mGalleryView.setAdapter(adapter);
         mGalleryView.setMinimumScale(0.7f);
         mGalleryView.setMinimumAlpha(0.8f);
-        mGalleryView.setMaxZ(50.0f);
+        mGalleryView.setMaxZ(5.0f);
         mGalleryView.getDefaultDecoration().setHorizontalInsets(
                 getResources().getDimensionPixelSize(R.dimen.space_between_items));
         return view;

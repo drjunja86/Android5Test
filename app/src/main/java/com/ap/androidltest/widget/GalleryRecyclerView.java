@@ -46,7 +46,7 @@ public class GalleryRecyclerView extends RecyclerView {
         // use a linear layout manager
         mLayoutManager = new GalleryLayoutManager();
         setLayoutManager(mLayoutManager);
-        mDefaultDecoration = new InsetDecoration(0, 50);
+        mDefaultDecoration = new InsetDecoration(0, 30);
         addItemDecoration(mDefaultDecoration);
 
         TypedArray ta = context.obtainStyledAttributes(attrs, R.styleable.GalleryRecyclerView, 0, 0);

@@ -8,10 +8,10 @@
     <com.ap.androidltest.widget.GalleryRecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="350dp"
         android:clipToPadding="false"
         android:paddingTop="@dimen/tool_bar_height"
-        custom:maxZ="50"
+        custom:maxZ="5"
         custom:minAlpha="0.8"
         custom:minScale="0.7" />
 

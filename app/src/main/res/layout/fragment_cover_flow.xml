@@ -1,18 +1,38 @@
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:custom="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.ap.androidltest.fragment.CoverFlowFragment">
+    tools:context="com.ap.androidltest.fragment.CoverFlowFragment"
+    android:orientation="vertical">
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
 
     <com.ap.androidltest.widget.CoverFlowRecyclerView
         android:id="@+id/recycler_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="350dp"
         android:clipToPadding="false"
-        android:paddingTop="@dimen/tool_bar_height"
-        custom:maxZ="50"
+        custom:maxZ="5"
         custom:minAlpha="0.8"
         custom:minScale="0.7" />
 
-</FrameLayout>
+    <TextView
+        android:id="@+id/coverflow_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:padding="0dp"
+        android:textSize="16sp"
+        android:textColor="@android:color/black"
+        android:textStyle="bold" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+</LinearLayout>
