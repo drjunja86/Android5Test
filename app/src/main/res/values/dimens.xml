@@ -11,7 +11,7 @@
     <dimen name="tool_bar_height">56dp</dimen>
     <dimen name="info_image_height">200dp</dimen>
     <dimen name="card_margin">10dp</dimen>
-    <dimen name="space_between_items">-10dp</dimen>
+    <dimen name="space_between_items">0dp</dimen>
     <dimen name="card_max_elevation">6dp</dimen>
     <dimen name="space_between_items_rv">10dp</dimen>
     <dimen name="cover_flow_item_width">300dp</dimen>

@@ -170,13 +170,7 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
         for (int i = 0; i < getVisibleChildCount(); i++) {
             View child = getChildAt(i);
             if (child == null) continue;
-            int left = getDecoratedLeft(child);
-            int right = getDecoratedRight(child);
-            float center = (float) (left + (right - left) / 2);
-            float halfScreen = (float) getWidth() / 2;
-            float distanceFromCenter = Math.abs(halfScreen - center) / mScaleStartDivider; // divided to start resizing earlier
-            float scale = 1 - distanceFromCenter / halfScreen;
-            if (scale < 0) scale = 0;
+            float scale = getScaleForChild(child, false);
             float alpha = scale;
             float translationZScale = scale;
             if (scale < mMinScale) scale = mMinScale;
@@ -190,6 +184,18 @@ public abstract class BaseGalleryLayoutManager extends RecyclerView.LayoutManage
                 ViewCompat.setTranslationZ(child, mMaxZ * translationZScale);
             }
         }
+    }
+
+    protected float getScaleForChild(View child, boolean considerMin) {
+        int left = getDecoratedLeft(child);
+        int right = getDecoratedRight(child);
+        float center = (float) (left + (right - left) / 2);
+        float halfScreen = (float) getWidth() / 2;
+        float distanceFromCenter = Math.abs(halfScreen - center) / mScaleStartDivider;
+        float scale = 1 - distanceFromCenter / halfScreen;
+        if (scale < 0) scale = 0;
+        if (considerMin && scale < mMinScale) scale = mMinScale;
+        return scale;
     }
 
     /**

@@ -183,7 +183,7 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     @Override
     public void smoothScrollToPosition(int position) {
-        smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
+//        smoothScrollBy(mLayoutManager.getOffsetToItem(position), 0);
     }
 
     /**
@@ -193,7 +193,7 @@ public class GalleryRecyclerView extends RecyclerView {
      */
     @Override
     public void scrollToPosition(int position) {
-        scrollBy(mLayoutManager.getOffsetToItem(position), 0);
+//        scrollBy(mLayoutManager.getOffsetToItem(position), 0);
     }
 
     /**
@@ -309,7 +309,7 @@ public class GalleryRecyclerView extends RecyclerView {
                 mScrollListener.onScrollStateChanged(recyclerView, newState);
             if (RecyclerView.SCROLL_STATE_IDLE == newState) {
                 int newPosition = mLayoutManager.getCurrentCenteredPosition();
-                smoothScrollBy(mLayoutManager.getOffsetToItem(newPosition), 0);
+//                smoothScrollBy(mLayoutManager.getOffsetToItem(newPosition), 0);
                 setCenteredPosition(newPosition);
             }
         }

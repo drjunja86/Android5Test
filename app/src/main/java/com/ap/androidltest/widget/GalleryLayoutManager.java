@@ -5,6 +5,8 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.view.View;
 
+import java.util.HashMap;
+
 /**
  * Created by AP on 19/11/14.
  * Layout manager for RecycleView to simulate
@@ -14,6 +16,7 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
     private static final String TAG = GalleryLayoutManager.class.getSimpleName();
     /* Flag to force current scroll offsets to be ignored on re-layout */
     private int mFirstItemOffset = NOT_SET, mLastItemOffset = NOT_SET;
+    private HashMap<View, Integer> mPositions = new HashMap<>();
 
     public GalleryLayoutManager() {
         Log.d(TAG, "Initializing GalleryLayoutManager");
@@ -30,7 +33,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
      */
     @Override
     public void onLayoutChildren(RecyclerView.Recycler recycler, RecyclerView.State state) {
-
         //We have nothing to show for an empty data set but clear any existing views
         if (getItemCount() == 0) {
             detachAndScrapAttachedViews(recycler);
@@ -65,8 +67,6 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
 
         if (isCoverFlow()) onLayoutChildrenCoverFlow(recycler, state);
         else onLayoutChildrenGallery(recycler, state);
-
-        scaleAllItems();
     }
 
     /*
@@ -103,8 +103,10 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
 
     private void onLayoutChildrenCoverFlow(RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
         int childLeft;
-        int childTop = 0;
 
+        removeAllOffsets();
+
+        Log.d(TAG, "onLayoutChildrenCoverFlow " + (mPendingCenteredPosition != NOT_SET) + "   " + (getChildCount() == 0));
         int centeredChild = Math.round((float) getVisibleChildCount() / 2.0f) - 1;
         if (mPendingCenteredPosition != NOT_SET) {
             //situation when there are should be items which go out of screen before the centered item
@@ -126,7 +128,7 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
         detachAndScrapAttachedViews(recycler);
 
         //Fill the grid for the initial layout of views
-        fillGridCoverFlow(DIRECTION_NONE, childLeft, childTop, recycler);
+        fillGridCoverFlow(DIRECTION_NONE, childLeft, 0, recycler);
     }
 
     private void onLayoutChildrenGallery(RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
@@ -288,6 +290,7 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
     }
 
     private void fillGridCoverFlow(int direction, int emptyLeft, int emptyTop, RecyclerView.Recycler recycler) {
+        Log.d(TAG, "fillGridCoverFlow empty left = " + emptyLeft + "  direction = " + direction);
         mFirstVisiblePosition = getProperPosition(mFirstVisiblePosition);
         /*
          * First, we will detach all existing views from the layout.
@@ -345,14 +348,19 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
          * re-attached. New views that must be created are obtained
          * from the Recycler and added.
          */
+//        int leftOffset = -540;
         int leftOffset = startLeftOffset;
         int topOffset = startTopOffset;
+        int visibleItems = getVisibleChildCount();
+        int centeredChild = Math.round((float) visibleItems / 2.0f) - 1;
 
-        for (int i = 0; i < getVisibleChildCount(); i++) {
+//        Log.d(TAG, "startLeftOffset = " + startLeftOffset);
+//        Log.d(TAG, "centeredChild = " + centeredChild);
+        for (int i = 0; i < visibleItems; i++) {
             int nextPosition = positionOfIndex(i);
-
             //Layout this position
             View view = viewCache.get(nextPosition);
+
             if (view == null) {
                 /*
                  * The Recycler will give us either a newly constructed view,
@@ -362,30 +370,48 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
                  */
                 view = recycler.getViewForPosition(nextPosition);
                 addView(view);
-
+                measureChildWithMargins(view, 0, 0);
                 /*
                  * It is prudent to measure/layout each new view we
                  * receive from the Recycler. We don't have to do
                  * this for views we are just re-arranging.
                  */
-                measureChildWithMargins(view, 0, 0);
                 layoutDecorated(view, leftOffset, topOffset,
-                        leftOffset + mDecoratedChildWidth,
-                        topOffset + mDecoratedChildHeight);
+                        leftOffset + mDecoratedChildWidth, topOffset + mDecoratedChildHeight);
             } else {
-                //Re-attach the cached view at its new index
                 attachView(view);
                 viewCache.remove(nextPosition);
             }
 
-            if (i % mVisibleColumnCount == (mVisibleColumnCount - 1)) {
-                leftOffset = startLeftOffset;
-                topOffset += mDecoratedChildHeight;
-                //If we wrapped without setting the column count, we've reached it
-            } else {
-                leftOffset += mDecoratedChildWidth;
-            }
+            leftOffset += mDecoratedChildWidth;
         }
+
+        int currentIndexOffset = 0;
+        boolean fromStart = true;
+        int totalOffset = 0;
+        while (currentIndexOffset <= centeredChild) {
+            int index = centeredChild + ((fromStart ? -1 : 1) * currentIndexOffset);
+            View view = getChildAt(index);
+            float scale = getScaleForChild(view, true);
+            int childWidth = (int) (mDecoratedChildWidth * scale);
+            int multiplier = index < centeredChild ? 1 : -1;
+            int offset = multiplier * ((mDecoratedChildWidth - childWidth) / 2 + totalOffset);
+
+            Log.d(TAG, "offset = " + offset + " totalOffset = " + totalOffset);
+            Log.d(TAG, "Position of child [" + index + "]  scale = " + scale + "  width = " + childWidth);
+
+            mPositions.put(view, offset);
+            view.offsetLeftAndRight(offset);
+
+            if (fromStart) {
+                totalOffset += offset * 2;
+                currentIndexOffset++;
+            }
+
+            fromStart = !fromStart;
+        }
+
+        scaleAllItems();
 
         /*
          * Finally, we ask the Recycler to scrap and store any views
@@ -393,8 +419,16 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
          * necessary because they are no longer visible.
          */
         for (int i = 0; i < viewCache.size(); i++) {
+            Log.d(TAG, "Recycling view at " + viewCache.valueAt(i));
             recycler.recycleView(viewCache.valueAt(i));
         }
+    }
+
+    private void removeAllOffsets() {
+        for (View view : mPositions.keySet()) {
+            view.offsetLeftAndRight(-mPositions.get(view));
+        }
+        mPositions.clear();
     }
 
     private int scrollHorizontallyGalleryBy(int dx, RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
@@ -477,20 +511,22 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
     private int scrollHorizontallyCoverFlowBy(int dx, RecyclerView.Recycler recycler, @SuppressWarnings("UnusedParameters") RecyclerView.State state) {
         //Take leftmost measurements from the top-left child
         final View topView = getChildAt(0);
-
         offsetChildrenHorizontal(-dx);
+        Log.d(TAG, "decoration left = " + getDecoratedLeft(topView));
 
         if (dx > 0) {
             if (getDecoratedRight(topView) < 0) {
-                fillGridCoverFlow(DIRECTION_END, 0, 0, recycler);
+                fillGridCoverFlow(DIRECTION_END, recycler);
+            } else {
+                fillGridCoverFlow(DIRECTION_NONE, recycler);
             }
         } else {
             if (getDecoratedLeft(topView) > 0) {
-                fillGridCoverFlow(DIRECTION_START, 0, 0, recycler);
+                fillGridCoverFlow(DIRECTION_START, recycler);
+            } else {
+                fillGridCoverFlow(DIRECTION_NONE, recycler);
             }
         }
-
-        scaleAllItems();
 
         /*
          * Return value determines if a boundary has been reached
@@ -499,6 +535,11 @@ public class GalleryLayoutManager extends BaseGalleryLayoutManager {
          * an edge effect.
          */
         return dx;
+    }
+
+    private void fillGridCoverFlow(int direction, RecyclerView.Recycler recycler) {
+        removeAllOffsets();
+        fillGridCoverFlow(direction, 0, 0, recycler);
     }
 
     private int getOffsetToItemCoverFlow(int position) {
